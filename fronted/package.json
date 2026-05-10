@@ -1,0 +1,51 @@
+{
+  "name": "fronted",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build:dev": "vite build --mode development",
+    "build:prod": "vite build --mode production",
+    "lint": "eslint src --fix --ext .ts,.tsx,.vue,.js,.jsx",
+    "prettier": "prettier --write .",
+    "preview": "vite preview",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:headed": "npx playwright test --headed",
+    "test:e2e:debug": "npx playwright test --debug",
+    "test:e2e:report": "npx playwright show-report"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "axios": "^1.16.0",
+    "element-plus": "^2.14.0",
+    "js-cookie": "^3.0.5",
+    "nprogress": "^0.2.0",
+    "pinia": "^3.0.4",
+    "pinia-plugin-persistedstate": "^4.7.1",
+    "vue": "^3.5.32",
+    "vue-router": "^5.0.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "@types/node": "^24.12.3",
+    "@types/nprogress": "^0.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "@vue/tsconfig": "^0.9.1",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-vue": "^10.9.1",
+    "prettier": "^3.8.3",
+    "sass": "^1.99.0",
+    "terser": "^5.47.1",
+    "typescript": "~6.0.2",
+    "unplugin-auto-import": "^0.18.6",
+    "unplugin-vue-components": "^0.27.4",
+    "vite": "^6.4.2",
+    "vue-tsc": "^2.2.12"
+  }
+}

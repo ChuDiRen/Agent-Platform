@@ -1,0 +1,128 @@
+// ============================================
+// Element Plus Light Theme Overrides
+// ============================================
+
+// --- Card ---
+.el-card {
+  background: $color-bg-surface !important;
+  border: 1px solid $border-color !important;
+  border-radius: $radius-lg !important;
+  box-shadow: $shadow-md !important;
+  color: $text-primary !important;
+
+  .el-card__body {
+    padding: $spacing-xl !important;
+  }
+}
+
+// --- Input ---
+.el-input {
+  .el-input__wrapper {
+    background: $color-bg-surface !important;
+    border: 1px solid $border-color !important;
+    border-radius: $radius-md !important;
+    box-shadow: none !important;
+    transition: border-color $transition-base, box-shadow $transition-base !important;
+    padding: 4px 12px !important;
+
+    &:hover {
+      border-color: #c0c4cc !important;
+    }
+
+    &.is-focus {
+      border-color: $accent-primary !important;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.08) !important;
+    }
+  }
+
+  .el-input__inner {
+    color: $text-primary !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 14px !important;
+
+    &::placeholder {
+      color: $text-placeholder !important;
+    }
+  }
+
+  .el-input__suffix,
+  .el-input__prefix {
+    color: $text-secondary !important;
+  }
+}
+
+// --- Button ---
+.el-button {
+  border-radius: $radius-md !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  transition: all $transition-base !important;
+  height: 40px !important;
+  padding: 0 24px !important;
+
+  &--primary {
+    background: $accent-gradient !important;
+    border: none !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+
+    &:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3) !important;
+      filter: brightness(1.05);
+    }
+
+    &:active {
+      transform: translateY(0) !important;
+    }
+  }
+
+  &--danger {
+    background: rgba($danger-color, 0.06) !important;
+    border: 1px solid rgba($danger-color, 0.2) !important;
+    color: $danger-color !important;
+
+    &:hover {
+      background: rgba($danger-color, 0.1) !important;
+      border-color: $danger-color !important;
+    }
+  }
+
+  &--default {
+    background: $color-bg-surface !important;
+    border: 1px solid $border-color !important;
+    color: $text-regular !important;
+
+    &:hover {
+      background: $color-bg-hover !important;
+      border-color: #c0c4cc !important;
+      color: $text-primary !important;
+    }
+  }
+}
+
+// --- Form ---
+.el-form-item {
+  margin-bottom: 20px !important;
+
+  .el-form-item__label {
+    color: $text-regular !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.02em !important;
+  }
+}
+
+// --- Message ---
+.el-message {
+  background: $color-bg-surface !important;
+  border: 1px solid $border-color !important;
+  border-radius: $radius-md !important;
+  box-shadow: $shadow-lg !important;
+
+  .el-message__content {
+    color: $text-primary !important;
+  }
+}

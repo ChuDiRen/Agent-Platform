@@ -1,0 +1,140 @@
+// ============================================
+// Design Tokens - Light Theme
+// ============================================
+
+// --- Core Palette ---
+$color-bg-deep: #f0f2f5;
+$color-bg-base: #f8f9fb;
+$color-bg-surface: #ffffff;
+$color-bg-elevated: #ffffff;
+$color-bg-hover: #f5f6f8;
+
+// --- Accent Colors ---
+$accent-primary: #2563eb;
+$accent-secondary: #7c3aed;
+$accent-tertiary: #f59e0b;
+$accent-gradient: linear-gradient(135deg, #2563eb, #7c3aed);
+
+// --- Text Colors ---
+$text-primary: #1a1a2e;
+$text-regular: #4b5563;
+$text-secondary: #9ca3af;
+$text-placeholder: #c4c8cf;
+$text-inverse: #ffffff;
+
+// --- Status Colors ---
+$primary-color: #2563eb;
+$success-color: #10b981;
+$warning-color: #f59e0b;
+$danger-color: #ef4444;
+$info-color: #3b82f6;
+
+// --- Borders & Surfaces ---
+$border-color: #e5e7eb;
+$border-glow: rgba(37, 99, 235, 0.15);
+$background-color: $color-bg-deep;
+
+// --- Glass Effect ---
+$glass-bg: rgba(255, 255, 255, 0.75);
+$glass-border: rgba(0, 0, 0, 0.06);
+$glass-blur: 20px;
+
+// --- Shadows ---
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+$shadow-glow: 0 0 20px rgba(37, 99, 235, 0.1);
+$shadow-glow-strong: 0 0 40px rgba(37, 99, 235, 0.18);
+
+// --- Spacing ---
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-2xl: 48px;
+
+// --- Border Radius ---
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 16px;
+$radius-xl: 24px;
+$radius-full: 9999px;
+
+// --- Transitions ---
+$transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+// ============================================
+// Mixins
+// ============================================
+
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@mixin flex-column-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin glass {
+  background: $glass-bg;
+  backdrop-filter: blur($glass-blur);
+  -webkit-backdrop-filter: blur($glass-blur);
+  border: 1px solid $glass-border;
+}
+
+@mixin glass-light {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+@mixin gradient-border {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: $accent-gradient;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+@mixin glow($color: $accent-primary, $intensity: 0.15) {
+  box-shadow: 0 0 20px rgba($color, $intensity);
+}
+
+@mixin text-glow($color: $accent-primary) {
+  text-shadow: 0 0 20px rgba($color, 0.3);
+}
+
+@mixin ellipsis($lines: 1) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  @if $lines == 1 {
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+  }
+}
