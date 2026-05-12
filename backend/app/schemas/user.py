@@ -1,10 +1,10 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import Optional
 from datetime import datetime
 
 
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
     full_name: Optional[str] = None
 
 

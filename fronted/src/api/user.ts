@@ -1,4 +1,4 @@
-import { post, get } from './http'
+import { post, get, put } from './http'
 
 export interface LoginRequest {
   email: string
@@ -19,6 +19,13 @@ export interface LoginResponse {
   user: UserInfo
 }
 
+export interface UserUpdateRequest {
+  email?: string
+  full_name?: string
+  password?: string
+  is_active?: boolean
+}
+
 export function login(data: LoginRequest): Promise<LoginResponse> {
   return post<LoginResponse>('/api/v1/users/login', data)
 }
@@ -29,4 +36,8 @@ export function getUserInfo(userId: number): Promise<UserInfo> {
 
 export function getUsers(skip = 0, limit = 100): Promise<UserInfo[]> {
   return get<UserInfo[]>('/api/v1/users/', { skip, limit })
+}
+
+export function updateUser(userId: number, data: UserUpdateRequest): Promise<UserInfo> {
+  return put<UserInfo>(`/api/v1/users/${userId}`, data)
 }

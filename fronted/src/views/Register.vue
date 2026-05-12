@@ -16,9 +16,15 @@ const form = reactive({
   full_name: '',
 })
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 async function handleRegister() {
   if (!form.email || !form.password || !form.confirmPassword) {
     ElMessage.warning('请填写完整信息')
+    return
+  }
+  if (!emailRegex.test(form.email)) {
+    ElMessage.warning('请输入正确的邮箱地址')
     return
   }
   if (form.password !== form.confirmPassword) {

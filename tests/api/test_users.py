@@ -1,10 +1,10 @@
 """用户接口测试。
 
 每个测试用例严格对应后端代码中的实际业务逻辑：
-- 注册：邮箱唯一性检查（users.py:13-15）
-- 登录：邮箱+密码认证（users.py:49-54）
-- CRUD：标准增删改查（users.py:11-45）
-- 更新：exclude_unset=True 部分更新（base.py:36）
+- 注册：邮箱唯一性检查（users.py:13-15）、邮箱格式校验（EmailStr）
+- 登录：邮箱+密码认证 + is_active 检查（crud/user.py:24-30）
+- 更新：exclude_unset=True 部分更新（base.py:36）+ 邮箱唯一性（users.py:35-38）
+- 删除：标准删除（users.py:40-45）
 """
 
 import pytest
@@ -67,6 +67,14 @@ class TestCreateUser:
         resp = client.post("/api/v1/users/", json=payload)
         assert resp.status_code == 422
 
+    def test_invalid_email_format(self, client):
+        """无效邮箱格式应返回 422（EmailStr 校验）。"""
+        resp = client.post("/api/v1/users/", json={
+            "email": "not-an-email",
+            "password": "Pass123!",
+        })
+        assert resp.status_code == 422
+
 
 # ============================================================
 # POST /api/v1/users/login — 登录
@@ -113,6 +121,27 @@ class TestLogin:
         resp = client.post("/api/v1/users/login", json={
             "email": "nonexistent@company.com",
             "password": "AnyPass123!",
+        })
+        assert resp.status_code == 401
+
+    def test_inactive_user_rejected(self, client):
+        """is_active=False 的用户应无法登录（crud/user.py:29 检查）。"""
+        # 注册
+        client.post("/api/v1/users/", json={
+            "email": "inactive@company.com",
+            "password": "Pass123!",
+        })
+        # 获取用户 ID 并禁用
+        users = client.get("/api/v1/users/").json()
+        user_id = next(u["id"] for u in users if u["email"] == "inactive@company.com")
+        client.put(f"/api/v1/users/{user_id}", json={
+            "email": "inactive@company.com",
+            "is_active": False,
+        })
+        # 尝试登录
+        resp = client.post("/api/v1/users/login", json={
+            "email": "inactive@company.com",
+            "password": "Pass123!",
         })
         assert resp.status_code == 401
 
@@ -255,6 +284,24 @@ class TestUpdateUser:
             "email": "ghost@company.com",
         })
         assert resp.status_code == 404
+
+    def test_duplicate_email_rejected(self, client):
+        """更新邮箱为已存在邮箱应返回 400（users.py:35-38 唯一性检查）。"""
+        client.post("/api/v1/users/", json={
+            "email": "taken@company.com",
+            "password": "Pass123!",
+        })
+        create_resp = client.post("/api/v1/users/", json={
+            "email": "updater@company.com",
+            "password": "Pass123!",
+        })
+        user_id = create_resp.json()["id"]
+
+        resp = client.put(f"/api/v1/users/{user_id}", json={
+            "email": "taken@company.com",
+        })
+        assert resp.status_code == 400
+        assert "already registered" in resp.json()["detail"].lower()
 
 
 # ============================================================

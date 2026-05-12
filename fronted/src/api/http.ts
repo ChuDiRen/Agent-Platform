@@ -51,6 +51,10 @@ export function post<T>(url: string, data?: object, config?: AxiosRequestConfig)
   return service.post(url, data, config) as Promise<T>
 }
 
+export function put<T>(url: string, data?: object, config?: AxiosRequestConfig): Promise<T> {
+  return service.put(url, data, config) as Promise<T>
+}
+
 export function upload<T>(url: string, formData: FormData): Promise<T> {
   return service.post(url, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

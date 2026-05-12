@@ -36,7 +36,12 @@ async function handleLogin() {
     const redirect = (route.query.redirect as string) || '/home'
     router.push(redirect)
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '登录失败')
+    const detail = error?.response?.data?.detail
+    if (detail === '邮箱或密码错误') {
+      ElMessage.error('邮箱或密码错误，或账号已被禁用')
+    } else {
+      ElMessage.error(detail || '登录失败')
+    }
   } finally {
     loading.value = false
   }

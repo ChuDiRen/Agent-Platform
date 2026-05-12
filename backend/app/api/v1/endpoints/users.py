@@ -34,6 +34,10 @@ def update_user(user_id: int, user_in: UserUpdate, db: Session = Depends(get_db)
     user = user_crud.get(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if user_in.email and user_in.email != user.email:
+        existing = user_crud.get_by_email(db, email=user_in.email)
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
     return user_crud.update(db, db_obj=user, obj_in=user_in)
 
 
