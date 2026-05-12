@@ -1,12 +1,27 @@
 {
   "hooks": {
-    "PostToolUse": [
+    "PreToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Grep|Glob|Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "cd e:\\Agent-Platform\\backend && .\\venv\\Scripts\\pytest -v --tb=short 2>&1 | tail -20"
+            "command": "node .claude\\hooks\\gitnexus-hook.cjs",
+            "timeout": 10,
+            "statusMessage": "Enriching with GitNexus graph context..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude\\hooks\\gitnexus-hook.cjs",
+            "timeout": 10,
+            "statusMessage": "Checking GitNexus index freshness..."
           }
         ]
       }

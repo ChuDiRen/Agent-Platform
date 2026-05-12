@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -18,6 +18,8 @@ class UserUpdate(UserBase):
 
 
 class UserInDB(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     hashed_password: str
     is_active: bool
@@ -25,18 +27,14 @@ class UserInDB(UserBase):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
-
 
 class User(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     is_active: bool
     is_superuser: bool
     created_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 
 class LoginRequest(BaseModel):
