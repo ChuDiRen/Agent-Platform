@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { removeToken } from '@/utils/auth'
 
 export const useUserStore = defineStore(
   'user',
@@ -20,6 +21,7 @@ export const useUserStore = defineStore(
     }
 
     function logout() {
+      removeToken()
       token.value = ''
       userName.value = ''
       avatar.value = ''
@@ -36,3 +38,4 @@ export const useUserStore = defineStore(
     },
   },
 )
+

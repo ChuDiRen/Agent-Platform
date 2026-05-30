@@ -1,34 +1,39 @@
 import { test as setup, expect } from "@playwright/test";
+import { registerUser, loginUser } from "./helpers";
 
 const authFile = ".auth/user.json";
+const EMAIL = "e2e_admin@test.com";
+const PASSWORD = "E2eTest123!";
 
-setup("authenticate", async ({ page }) => {
-  // Mock the login API to return a successful response
-  await page.route("**/api/v1/users/login", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        access_token: "mock-jwt-token-for-testing",
-        token_type: "bearer",
-        user: {
-          id: 1,
-          email: "test@example.com",
-          full_name: "测试用户",
-          is_superuser: true,
-        },
-      }),
-    });
-  });
+setup("authenticate via real backend", async ({ page, request }) => {
+  // Register (idempotent — 200 or 400 both fine)
+  await registerUser(request, EMAIL, PASSWORD, "E2E管理员");
 
-  await page.goto("/login");
-  await page.getByPlaceholder("邮箱地址").fill("test@example.com");
-  await page.getByPlaceholder("密码").fill("Test123456");
-  await page.getByRole("button", { name: "登录" }).click();
+  // Login and get real token
+  const token = await loginUser(request, EMAIL, PASSWORD);
 
-  // Wait for navigation to home
-  await page.waitForURL("/home");
+  // Set token in localStorage before navigating
+  await page.addInitScript(
+    ({ token, email }) => {
+      localStorage.setItem(
+        "user_info",
+        JSON.stringify({
+          state: {
+            token,
+            userName: "E2E管理员",
+            avatar: "",
+            role: "admin",
+          },
+        }),
+      );
+    },
+    { token, email: EMAIL },
+  );
 
-  // Save storage state (cookies + localStorage)
+  // Navigate to trigger cookie/token setup
+  await page.goto("/projects");
+  await expect(page.getByText("项目管理")).toBeVisible();
+
+  // Save storage state
   await page.context().storageState({ path: authFile });
 });

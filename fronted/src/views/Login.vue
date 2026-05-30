@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/store'
 import { login } from '@/api/user'
+import { setToken } from '@/utils/auth'
 import { ElMessage } from 'element-plus'
 
 defineOptions({ name: 'Login' })
@@ -27,13 +28,14 @@ async function handleLogin() {
   try {
     const res = await login({ email: form.email, password: form.password })
     userStore.setToken(res.access_token)
+    setToken(res.access_token)
     userStore.setUserInfo({
       userName: res.user.full_name || res.user.email,
       avatar: '',
       role: res.user.is_superuser ? 'admin' : 'user',
     })
     ElMessage.success('登录成功')
-    const redirect = (route.query.redirect as string) || '/home'
+    const redirect = (route.query.redirect as string) || '/projects'
     router.push(redirect)
   } catch (error: any) {
     const detail = error?.response?.data?.detail
@@ -45,6 +47,11 @@ async function handleLogin() {
   } finally {
     loading.value = false
   }
+}
+
+function fillDefault() {
+  form.email = 'admin@qq.com'
+  form.password = 'admin123456'
 }
 </script>
 
@@ -130,6 +137,14 @@ async function handleLogin() {
             </el-button>
           </el-form-item>
         </el-form>
+        <div class="quick-fill">
+          <button class="quick-fill-btn" @click="fillDefault">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span>快速填写默认账号</span>
+          </button>
+        </div>
         <div class="form-footer">
           <span>还没有账号？</span>
           <router-link to="/register" class="link">立即注册</router-link>
@@ -294,6 +309,31 @@ async function handleLogin() {
   margin-top: 4px;
 }
 
+.quick-fill {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.quick-fill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: $radius-md;
+  background: transparent;
+  border: 1px dashed $border-color;
+  color: $text-secondary;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $accent-primary;
+    color: $accent-primary;
+    background: rgba($accent-primary, 0.04);
+  }
+}
+
 .form-footer {
   text-align: center;
   margin-top: 32px;
@@ -322,3 +362,6 @@ async function handleLogin() {
   }
 }
 </style>
+
+
+

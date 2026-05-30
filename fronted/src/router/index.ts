@@ -3,13 +3,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/home',
-  },
-  {
-    path: '/home',
-    name: 'Home',
-    component: () => import('@/views/Home.vue'),
-    meta: { title: '首页' },
+    redirect: '/projects',
   },
   {
     path: '/login',
@@ -22,6 +16,24 @@ const routes: RouteRecordRaw[] = [
     name: 'Register',
     component: () => import('@/views/Register.vue'),
     meta: { title: '注册' },
+  },
+  {
+    path: '/projects',
+    name: 'Projects',
+    component: () => import('@/views/Project.vue'),
+    meta: { title: '项目管理' },
+  },
+  {
+    path: '/projects/:id',
+    name: 'ProjectDetail',
+    component: () => import('@/views/ProjectDetail.vue'),
+    meta: { title: '项目详情' },
+  },
+  {
+    path: '/agent-hub',
+    name: 'AgentHub',
+    component: () => import('@/views/AgentHub.vue'),
+    meta: { title: '大熊AI智能体' },
   },
 ]
 

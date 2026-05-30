@@ -1,0 +1,13 @@
+name: project-management
+phase: archive
+workflow: full
+created_at: 2026-05-30
+updated_at: 2026-05-30
+build_mode: direct
+isolation: branch
+direct_override: true
+verify_result: pass
+verification_report: openspec/changes/project-management/.comet/verification-report.md
+branch_status: handled
+verified_at: 2026-05-30
+archived: true

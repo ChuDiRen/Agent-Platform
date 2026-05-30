@@ -34,5 +34,3 @@ Write-Host "  前端: http://localhost:3000" -ForegroundColor White
 Write-Host "  后端: http://localhost:8000" -ForegroundColor White
 Write-Host "  API 文档: http://localhost:8000/docs" -ForegroundColor White
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host ""
-Read-Host "按 Enter 退出"

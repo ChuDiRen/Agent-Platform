@@ -20,6 +20,9 @@ venv/
 *.swo
 *~
 
+# 运行时
+.service-pids.json
+
 # 系统文件
 .DS_Store
 Thumbs.db
