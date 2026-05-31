@@ -1,0 +1,14 @@
+{
+  "change": "ai-test-data-generator",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "1e11053e45de93dc89acab9d1d9c97fdf1d34ab08feb1e0e8b775ce26298c459",
+  "files": [
+    { "path": "openspec/changes/ai-test-data-generator/proposal.md", "sha256": "46cfb38b82060b9c54064cbc0026db09272850bc8c1ff1c56e83d57bd1c4257d" },
+    { "path": "openspec/changes/ai-test-data-generator/design.md", "sha256": "27489f8b017f3f15489f5d01018c0c45ce28265cd53b7eca72aa6ab5b78688d9" },
+    { "path": "openspec/changes/ai-test-data-generator/tasks.md", "sha256": "19b45658de60aa8e8598b4d6cd9ac5348af0a44516b1ce5f82a3129bbeaf1154" },
+    { "path": "openspec/changes/ai-test-data-generator/specs/test-data-generation/spec.md", "sha256": "9e12beeb0973e22ccf021d75836b818107461ad9cec214005285989b25b69adc" }
+  ]
+}

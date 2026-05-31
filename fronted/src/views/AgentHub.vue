@@ -23,6 +23,14 @@ function handleCommand(cmd: string) {
 
 function handleUse(agent: AgentInfo) {
   if (agent.is_placeholder) { ElMessage.info('敬请期待'); return }
+  if (agent.icon === 'data' || agent.name.includes('测试数据生成')) {
+    router.push('/test-data-generator')
+    return
+  }
+  if (agent.icon === 'doc' || agent.name.includes('需求')) {
+    router.push('/requirement-review')
+    return
+  }
   ElMessage.warning('功能开发中，即将开放')
 }
 

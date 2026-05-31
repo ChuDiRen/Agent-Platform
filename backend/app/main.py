@@ -1,12 +1,13 @@
 import json
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import SQLAlchemyError
 from app.core.config import settings
 from app.core.security import get_password_hash
 from app.db.session import SessionLocal
 from app.models.user import User
 from app.models.agent import Agent
-from app.api.v1.endpoints import users, projects, agents
+from app.api.v1.endpoints import users, projects, agents, test_data, documents
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -27,6 +28,8 @@ if settings.BACKEND_CORS_ORIGINS:
 app.include_router(users.router, prefix=f"{settings.API_V1_PREFIX}/users", tags=["users"])
 app.include_router(projects.router, prefix=f"{settings.API_V1_PREFIX}/projects", tags=["projects"])
 app.include_router(agents.router, prefix=f"{settings.API_V1_PREFIX}/agents", tags=["agents"])
+app.include_router(test_data.router, prefix=f"{settings.API_V1_PREFIX}/test-data", tags=["test-data"])
+app.include_router(documents.router, prefix=f"{settings.API_V1_PREFIX}/documents", tags=["documents"])
 
 
 SEED_AGENTS = [
@@ -127,6 +130,8 @@ def seed_defaults():
             for data in SEED_AGENTS:
                 db.add(Agent(**data))
             db.commit()
+    except SQLAlchemyError:
+        db.rollback()
     finally:
         db.close()
 

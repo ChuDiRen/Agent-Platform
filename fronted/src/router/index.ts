@@ -35,6 +35,18 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/AgentHub.vue'),
     meta: { title: '大熊AI智能体' },
   },
+  {
+    path: '/test-data-generator',
+    name: 'TestDataGenerator',
+    component: () => import('@/views/TestDataGenerator.vue'),
+    meta: { title: 'AI测试数据生成' },
+  },
+  {
+    path: '/requirement-review',
+    name: 'RequirementReviewAssistant',
+    component: () => import('@/views/RequirementReviewAssistant.vue'),
+    meta: { title: 'AI需求评审助手' },
+  },
 ]
 
 const router = createRouter({

@@ -1,0 +1,18 @@
+workflow: full
+phase: archive
+build_mode: executing-plans
+isolation: branch
+verify_mode: null
+base_ref: ad64b60f3b431d1a776f9b9fb48e535f6839992c
+design_doc: docs/superpowers/specs/2026-05-31-ai-test-data-generator-design.md
+plan: docs/superpowers/plans/2026-05-31-ai-test-data-generator.md
+verify_result: pass
+verification_report: docs/superpowers/reports/2026-05-31-ai-test-data-generator-verify.md
+branch_status: handled
+created_at: 2026-05-31
+verified_at: 2026-05-31
+archived: true
+handoff_context: openspec/changes/ai-test-data-generator/.comet/handoff/design-context.json
+handoff_hash: 1e11053e45de93dc89acab9d1d9c97fdf1d34ab08feb1e0e8b775ce26298c459
+build_command: bash scripts/verify-test-data.sh
+verify_command: bash scripts/verify-test-data.sh

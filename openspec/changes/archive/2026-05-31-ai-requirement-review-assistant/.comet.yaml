@@ -1,0 +1,18 @@
+workflow: full
+phase: archive
+build_mode: executing-plans
+isolation: branch
+verify_mode: null
+base_ref: ad64b60f3b431d1a776f9b9fb48e535f6839992c
+design_doc: docs/superpowers/specs/2026-05-31-ai-requirement-review-assistant-design.md
+plan: docs/superpowers/plans/2026-05-31-ai-requirement-review-assistant.md
+verify_result: pass
+verification_report: docs/superpowers/reports/2026-05-31-ai-requirement-review-assistant-verify.md
+branch_status: handled
+created_at: 2026-05-31
+verified_at: 2026-05-31
+archived: true
+handoff_context: openspec/changes/ai-requirement-review-assistant/.comet/handoff/design-context.json
+handoff_hash: c8d290662a4314bb8d14ddda1222ce1be0192e386b1e472d8f549e92d2849420
+build_command: bash scripts/verify-requirement-review.sh
+verify_command: bash scripts/verify-requirement-review.sh

@@ -1,0 +1,14 @@
+{
+  "change": "ai-requirement-review-assistant",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "c8d290662a4314bb8d14ddda1222ce1be0192e386b1e472d8f549e92d2849420",
+  "files": [
+    { "path": "openspec/changes/ai-requirement-review-assistant/proposal.md", "sha256": "d9f910d63bc869f0b54062c6e30bfb81efd757567bc2aac32a96d202b839c906" },
+    { "path": "openspec/changes/ai-requirement-review-assistant/design.md", "sha256": "3a0a6378e8abceb6b17ede385bedcc0182e5125eb2c70eab1f85424be18aaf37" },
+    { "path": "openspec/changes/ai-requirement-review-assistant/tasks.md", "sha256": "d1f476b5e6d6b4e4bcb91330427680b5197b611d1fe967807df538c475c6498c" },
+    { "path": "openspec/changes/ai-requirement-review-assistant/specs/requirement-review-assistant/spec.md", "sha256": "a405810ea35fdab56077a424909619ccf570c23a9a5ca56b80e00b23438f34b6" }
+  ]
+}
