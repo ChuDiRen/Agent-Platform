@@ -7,7 +7,7 @@ from app.core.security import get_password_hash
 from app.db.session import SessionLocal
 from app.models.user import User
 from app.models.agent import Agent
-from app.api.v1.endpoints import users, projects, agents, test_data, documents
+from app.api.v1.endpoints import users, projects, agents, test_data, documents, api_documents
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -30,6 +30,7 @@ app.include_router(projects.router, prefix=f"{settings.API_V1_PREFIX}/projects",
 app.include_router(agents.router, prefix=f"{settings.API_V1_PREFIX}/agents", tags=["agents"])
 app.include_router(test_data.router, prefix=f"{settings.API_V1_PREFIX}/test-data", tags=["test-data"])
 app.include_router(documents.router, prefix=f"{settings.API_V1_PREFIX}/documents", tags=["documents"])
+app.include_router(api_documents.router, prefix=f"{settings.API_V1_PREFIX}/api-documents", tags=["api-documents"])
 
 
 SEED_AGENTS = [

@@ -47,6 +47,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/RequirementReviewAssistant.vue'),
     meta: { title: 'AI需求评审助手' },
   },
+  {
+    path: '/interface-document-analysis',
+    name: 'ApiDocumentAnalysis',
+    component: () => import('@/views/ApiDocumentAnalysis.vue'),
+    meta: { title: 'AI接口文档分析' },
+  },
 ]
 
 const router = createRouter({

@@ -27,6 +27,10 @@ function handleUse(agent: AgentInfo) {
     router.push('/test-data-generator')
     return
   }
+  if (agent.icon === 'api-doc' || agent.name.includes('接口文档分析')) {
+    router.push('/interface-document-analysis')
+    return
+  }
   if (agent.icon === 'doc' || agent.name.includes('需求')) {
     router.push('/requirement-review')
     return
