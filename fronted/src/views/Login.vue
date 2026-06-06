@@ -155,6 +155,8 @@ function fillDefault() {
 </template>
 
 <style scoped lang="scss">
+@use "sass:color";
+
 .login-page {
   display: flex;
   width: 100%;
@@ -347,7 +349,7 @@ function fillDefault() {
     transition: color $transition-fast;
 
     &:hover {
-      color: darken($accent-primary, 8%);
+      color: color.adjust($accent-primary, $lightness: -8%);
     }
   }
 }

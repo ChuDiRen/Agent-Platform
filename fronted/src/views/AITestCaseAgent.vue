@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import AgentPageHeader from '@/components/AgentPageHeader.vue'
 import {
   applyGeneratedTestCases,
   deleteTestCase,
@@ -21,13 +21,12 @@ interface TreeNode extends RequirementModule {
   children?: TreeNode[]
 }
 
-const router = useRouter()
 const projectId = 1
 const loading = ref(false)
 const applying = ref(false)
 const tableLoading = ref(false)
 const extraRequirement = ref('')
-const selectedModuleId = ref(4101)
+const selectedModuleId = ref<number | null>(null)
 const selectedRows = ref<TestCase[]>([])
 const generatedVisible = ref(false)
 const processingVisible = ref(false)
@@ -46,70 +45,14 @@ const editForm = reactive<TestCasePayload>({
 })
 const editingId = ref<number | null>(null)
 
-const treeData: TreeNode[] = [
-  { id: 100, type: 'group', title: '学生端登录接口文档0901002', content: '', children: [
-    {
-      id: 4101,
-      type: 'module',
-      title: '学生端登录接口文档0901002',
-      content: `# 学生端登录接口文档
-
-## 一、接口信息
-
-### 1. 简要描述
-用于实现账号登录功能，验证用户提交的账号、密码等信息，完成身份校验并返回登录结果。
-
-### 2. 请求 URL
-
-\`\`\`
-http://kaoshi.project.hctestedu.com/api/user/login
-\`\`\`
-
-### 3. 请求方式
-
-\`\`\`
-POST
-\`\`\`
-
-## 二、请求参数
-
-| 参数名 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| userName | string | 是 | 登录用户名 |
-| password | string | 是 | 登录密码 |
-| remember | boolean | 否 | 是否记住登录状态 |`,
-    },
-    {
-      id: 4102,
-      type: 'module',
-      title: '商品浏览历史列表接口文档',
-      content: `# 商品浏览历史列表接口文档
-
-### 2. 请求 URL
-\`\`\`
-/api/goods/history
-\`\`\`
-
-### 3. 请求方式
-\`\`\`
-GET
-\`\`\`
-
-| 参数名 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| page | number | 否 | 页码 |
-| pageSize | number | 否 | 每页数量 |`,
-    },
-    { id: 4103, type: 'module', title: '加入购物车接口文档', content: '请求 URL\n```/api/cart/add```\n请求方式\n```POST```\n| 参数名 | 类型 | 必填 | 说明 |\n| goods_id | number | 是 | 商品ID |\n| count | number | 是 | 数量 |' },
-  ] },
-]
+const treeData: TreeNode[] = []
 
 const selectedModule = computed(() => {
   for (const group of treeData) {
     const match = group.children?.find((item) => item.id === selectedModuleId.value)
     if (match) return match
   }
-  return treeData[0].children?.[0] as RequirementModule
+  return null
 })
 
 const currentTitle = computed(() => selectedModule.value?.title || '未选择模块')
@@ -117,7 +60,10 @@ const currentTitle = computed(() => selectedModule.value?.title || '未选择模
 async function loadCases() {
   tableLoading.value = true
   try {
-    testCases.value = await getTestCases({ project_id: projectId, module_id: selectedModuleId.value })
+    testCases.value = await getTestCases({
+      project_id: projectId,
+      module_id: selectedModuleId.value || undefined,
+    })
   } finally {
     tableLoading.value = false
   }
@@ -187,7 +133,7 @@ function openCreateDialog() {
   editingId.value = null
   Object.assign(editForm, {
     project_id: projectId,
-    module_id: selectedModuleId.value,
+    module_id: selectedModuleId.value || undefined,
     name: '',
     priority: 2,
     precondition: '',
@@ -221,7 +167,7 @@ async function saveEdit() {
     testCases.value = testCases.value.map((item) => (item.id === updated.id ? updated : item))
     ElMessage.success('用例已更新')
   } else {
-    const created = await applyGeneratedTestCases([{ ...editForm, project_id: projectId, module_id: selectedModuleId.value }])
+    const created = await applyGeneratedTestCases([{ ...editForm, project_id: projectId, module_id: selectedModuleId.value || undefined }])
     testCases.value = [...created, ...testCases.value]
     ElMessage.success('用例已新增')
   }
@@ -278,19 +224,12 @@ onMounted(loadCases)
 
 <template>
   <div class="case-page">
-    <header class="topbar">
-      <div class="brand" @click="router.push('/agent-hub')">
-        <div class="logo-mark" />
-        <span>华测 AI+接口用例</span>
-      </div>
-      <div class="top-links">
-        <span>互联网小说网站</span>
-        <button @click="router.push('/projects')">退出项目</button>
-      </div>
-    </header>
+    <AgentPageHeader title="接口用例助手" />
 
     <main class="layout">
       <aside class="sidebar">
+        <el-empty v-if="!treeData.length" description="暂无需求模块，请先导入文档或生成模块" />
+        <template v-else>
         <div v-for="group in treeData" :key="group.id" class="tree-group">
           <div class="tree-row group-row">
             <span class="caret">⌄</span>
@@ -311,6 +250,7 @@ onMounted(loadCases)
             <button @click.stop="previewModule(child)">查看</button>
           </div>
         </div>
+        </template>
       </aside>
 
       <section class="content">
@@ -691,6 +631,96 @@ onMounted(loadCases)
   .sidebar {
     height: auto;
     max-height: 320px;
+  }
+}
+.case-page {
+  background: #f5f7fa;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.layout {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+.sidebar,
+.prompt-panel,
+.case-card {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.case-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  gap: 24px;
+  width: min(1280px, calc(100vw - 48px));
+  max-width: none;
+  padding: 0 0 40px;
+}
+
+.sidebar {
+  align-self: start;
+  height: auto;
+  min-height: calc(100vh - 154px);
+  max-height: calc(100vh - 154px);
+  overflow: auto;
+}
+
+.content,
+.case-card,
+.prompt-panel {
+  min-width: 0;
+}
+
+.prompt-panel {
+  margin-bottom: 16px;
+  padding: 18px 20px;
+}
+
+.case-toolbar {
+  align-items: flex-start;
+  padding: 18px 20px;
+
+  h1 {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.actions {
+  gap: 10px;
+}
+
+.case-card :deep(.el-table) {
+  margin: 18px 20px;
+  width: calc(100% - 40px);
+}
+
+.pager {
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 20px 20px;
+}
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+    width: min(100%, calc(100vw - 32px));
+  }
+
+  .sidebar {
+    min-height: auto;
+    max-height: 280px;
   }
 }
 </style>

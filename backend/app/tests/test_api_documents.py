@@ -3,8 +3,8 @@ def test_create_api_document_and_analyze(client):
         "/api/v1/api-documents/",
         json={
             "project_id": 1,
-            "name": "学生端登录接口文档",
-            "title": "学生端登录接口文档",
+            "name": "接口文档目录",
+            "title": "接口文档目录",
             "is_directory": True,
         },
     )
@@ -16,9 +16,9 @@ def test_create_api_document_and_analyze(client):
         json={
             "project_id": 1,
             "parent_id": parent["id"],
-            "name": "学生端登录接口文档20050830",
-            "title": "学生端登录接口文档20050830",
-            "content": "# 接口信息\n\n请求 URL: /api/user/login\n\n请求方式: POST",
+            "name": "接口文档",
+            "title": "接口文档",
+            "content": "# 接口信息\n\n请求 URL: /api/example\n\n请求方式: POST",
             "is_directory": False,
         },
     )

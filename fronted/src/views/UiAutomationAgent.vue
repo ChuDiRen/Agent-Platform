@@ -3,47 +3,47 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
 import {
-  copyApiAutomationExec,
-  createApiAutomationExec,
-  deleteApiAutomationExec,
-  getApiAutomationCases,
-  getApiAutomationExecs,
-  type ApiAutomationCase,
-  type ApiAutomationExec,
-  type ApiExecutionResult,
-  type ApiRequestDetails,
-} from '@/api/apiAutomation'
+  copyUiAutomationExec,
+  createUiAutomationExec,
+  deleteUiAutomationExec,
+  getUiAutomationCases,
+  getUiAutomationExecs,
+  type UiAutomationCase,
+  type UiAutomationExec,
+  type UiExecutionResult,
+} from '@/api/uiAutomation'
 
-defineOptions({ name: 'ApiAutomationAgent' })
+defineOptions({ name: 'UiAutomationAgent' })
 
 const projectId = 1
 const caseLoading = ref(false)
 const execLoading = ref(false)
 const taskSubmitting = ref(false)
-const cases = ref<ApiAutomationCase[]>([])
-const execs = ref<ApiAutomationExec[]>([])
-const selectedCases = ref<ApiAutomationCase[]>([])
-const selectedExecs = ref<ApiAutomationExec[]>([])
+const cases = ref<UiAutomationCase[]>([])
+const execs = ref<UiAutomationExec[]>([])
+const selectedCases = ref<UiAutomationCase[]>([])
+const selectedExecs = ref<UiAutomationExec[]>([])
 const detailVisible = ref(false)
 const taskVisible = ref(false)
 const recordsVisible = ref(false)
 const reportVisible = ref(false)
-const currentCase = ref<ApiAutomationCase | null>(null)
-const currentReport = ref<ApiAutomationExec | null>(null)
+const currentCase = ref<UiAutomationCase | null>(null)
+const currentReport = ref<UiAutomationExec | null>(null)
 
 const filters = reactive({
   name: '',
   priority: '',
   moduleId: '',
-  execType: 'HTTP 请求',
+  execType: 'WEB 网页',
 })
 
 const taskForm = reactive({
   name: '',
-  execType: 'HTTP 请求',
+  execType: 'WEB 网页',
   baseUrl: '',
   username: '',
   password: '',
+  browser: 'Chromium',
   desc: '',
 })
 
@@ -51,24 +51,7 @@ const moduleOptions = [
   { label: '全部模块', value: '' },
 ]
 
-const priorityOptions = [
-  { label: '全部优先级', value: '' },
-  { label: 'P1', value: 1 },
-  { label: 'P2', value: 2 },
-  { label: 'P3', value: 3 },
-  { label: 'P4', value: 4 },
-  { label: 'P5', value: 5 },
-]
-
 const selectedCaseNames = computed(() => selectedCases.value.map((item) => item.name).join('、'))
-
-function toJson(value: unknown) {
-  return JSON.stringify(value ?? {}, null, 2)
-}
-
-function priorityText(priority: number) {
-  return `P${priority}`
-}
 
 function priorityType(priority: number) {
   if (priority === 1) return 'danger'
@@ -77,10 +60,15 @@ function priorityType(priority: number) {
   return 'info'
 }
 
+function formatTime(value?: string | null) {
+  if (!value) return '-'
+  return new Date(value).toLocaleString('zh-CN', { hour12: false })
+}
+
 async function loadCases() {
   caseLoading.value = true
   try {
-    cases.value = await getApiAutomationCases({
+    cases.value = await getUiAutomationCases({
       project_id: projectId,
       name: filters.name || undefined,
       priority: filters.priority ? Number(filters.priority) : undefined,
@@ -95,28 +83,28 @@ async function loadCases() {
 async function loadExecs() {
   execLoading.value = true
   try {
-    execs.value = await getApiAutomationExecs(projectId)
+    execs.value = await getUiAutomationExecs(projectId)
   } finally {
     execLoading.value = false
   }
 }
 
 function resetFilters() {
-  Object.assign(filters, { name: '', priority: '', moduleId: '', execType: 'HTTP 请求' })
+  Object.assign(filters, { name: '', priority: '', moduleId: '', execType: 'WEB 网页' })
   loadCases()
 }
 
-function openCase(row: ApiAutomationCase) {
+function openCase(row: UiAutomationCase) {
   currentCase.value = row
   detailVisible.value = true
 }
 
 function openTaskDialog() {
   if (!selectedCases.value.length) {
-    ElMessage.warning('请先勾选需要执行的接口用例')
+    ElMessage.warning('请先勾选需要执行的UI用例')
     return
   }
-  taskForm.name = `AI自动化任务-${new Date().toLocaleString('zh-CN', { hour12: false })}`
+  taskForm.name = `AI UI自动化任务-${new Date().toLocaleString('zh-CN', { hour12: false })}`
   taskVisible.value = true
 }
 
@@ -127,7 +115,7 @@ async function submitTask() {
   }
   taskSubmitting.value = true
   try {
-    const created = await createApiAutomationExec({
+    const created = await createUiAutomationExec({
       project_id: projectId,
       name: taskForm.name,
       exec_type: taskForm.execType,
@@ -135,19 +123,11 @@ async function submitTask() {
       desc: taskForm.desc,
       exec_param: {
         base_url: taskForm.baseUrl,
-        credential: {
-          username: taskForm.username,
-          password: taskForm.password,
-        },
-        case_params: Object.fromEntries(
-          selectedCases.value.map((item) => [
-            String(item.id),
-            { username: taskForm.username, password: taskForm.password },
-          ]),
-        ),
+        browser: taskForm.browser,
+        credential: { username: taskForm.username, password: taskForm.password },
       },
     })
-    ElMessage.success('AI界面测试任务已执行完成')
+    ElMessage.success('AI UI自动化任务已执行完成')
     taskVisible.value = false
     currentReport.value = created
     reportVisible.value = true
@@ -162,24 +142,24 @@ function openRecords() {
   loadExecs()
 }
 
-function openReport(row: ApiAutomationExec) {
+function openReport(row: UiAutomationExec) {
   currentReport.value = row
   reportVisible.value = true
 }
 
-async function removeExec(row: ApiAutomationExec) {
+async function removeExec(row: UiAutomationExec) {
   await ElMessageBox.confirm(`确认删除执行记录“${row.name}”？`, '删除确认', {
     type: 'warning',
     confirmButtonText: '删除',
     cancelButtonText: '取消',
   })
-  await deleteApiAutomationExec(row.id)
+  await deleteUiAutomationExec(row.id)
   ElMessage.success('已删除执行记录')
   await loadExecs()
 }
 
-async function copyExec(row: ApiAutomationExec) {
-  const copied = await copyApiAutomationExec(row.id)
+async function copyExec(row: UiAutomationExec) {
+  const copied = await copyUiAutomationExec(row.id)
   ElMessage.success('已复制执行')
   await loadExecs()
   openReport(copied)
@@ -190,36 +170,13 @@ async function batchDelete() {
     ElMessage.warning('请先勾选执行记录')
     return
   }
-  await ElMessageBox.confirm(`确认删除 ${selectedExecs.value.length} 条执行记录？`, '批量删除', {
-    type: 'warning',
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-  })
-  await Promise.all(selectedExecs.value.map((item) => deleteApiAutomationExec(item.id)))
+  await Promise.all(selectedExecs.value.map((item) => deleteUiAutomationExec(item.id)))
   selectedExecs.value = []
   ElMessage.success('批量删除完成')
   await loadExecs()
 }
 
-function formatTime(value?: string | null) {
-  if (!value) return '-'
-  return new Date(value).toLocaleString('zh-CN', { hour12: false })
-}
-
-function requestRows(request?: ApiRequestDetails | null) {
-  if (!request) return []
-  return [
-    ['程序入口', request.path],
-    ['执行方式', request.method],
-    ['URL参数', toJson(request.url_params)],
-    ['表单参数', toJson(request.form)],
-    ['页面动作参数', toJson(request.json)],
-    ['Cookies', toJson(request.cookies)],
-    ['Headers', toJson(request.headers)],
-  ]
-}
-
-function resultType(result: ApiExecutionResult) {
+function resultType(result: UiExecutionResult) {
   return result.status === '测试成功' ? 'success' : 'danger'
 }
 
@@ -229,18 +186,21 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="automation-page">
-    <AgentPageHeader title="接口自动化助手" />
+  <div class="ui-page">
+    <AgentPageHeader title="UI自动化助手" />
 
     <main class="workspace">
       <section class="filter-panel">
         <el-form :inline="true" label-width="80px" @submit.prevent>
           <el-form-item label="用例名称">
-            <el-input v-model="filters.name" placeholder="请输入用例名称" clearable />
+            <el-input v-model="filters.name" placeholder="请输入UI用例名称" clearable />
           </el-form-item>
           <el-form-item label="优先级">
             <el-select v-model="filters.priority" placeholder="全部优先级" clearable>
-              <el-option v-for="item in priorityOptions" :key="String(item.value)" :label="item.label" :value="item.value" />
+              <el-option label="全部优先级" value="" />
+              <el-option label="P1" :value="1" />
+              <el-option label="P2" :value="2" />
+              <el-option label="P3" :value="3" />
             </el-select>
           </el-form-item>
           <el-form-item label="指定模块">
@@ -259,10 +219,10 @@ onMounted(async () => {
         <div class="panel-toolbar">
           <div class="toolbar-left">
             <el-select v-model="filters.execType" class="type-select" @change="loadCases">
-              <el-option label="HTTP 接口" value="HTTP 请求" />
               <el-option label="WEB 网页" value="WEB 网页" />
+              <el-option label="移动应用端" value="移动应用端" />
             </el-select>
-            <span class="hint">已选择 {{ selectedCases.length }} 条用例</span>
+            <span class="hint">已选择 {{ selectedCases.length }} 条UI用例</span>
           </div>
           <div class="toolbar-actions">
             <el-button type="primary" @click="openTaskDialog">创建 AI 测试任务</el-button>
@@ -274,75 +234,73 @@ onMounted(async () => {
           v-loading="caseLoading"
           :data="cases"
           stripe
-          @selection-change="(rows: ApiAutomationCase[]) => selectedCases = rows"
+          @selection-change="(rows: UiAutomationCase[]) => selectedCases = rows"
         >
           <el-table-column type="selection" width="48" />
-          <el-table-column prop="id" label="ID" width="96" />
-          <el-table-column label="优先级" width="100">
+          <el-table-column prop="id" label="ID" width="88" />
+          <el-table-column label="优先级" width="96">
             <template #default="{ row }">
-              <el-tag :type="priorityType(row.priority)" effect="light">{{ priorityText(row.priority) }}</el-tag>
+              <el-tag :type="priorityType(row.priority)">P{{ row.priority }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="module_name" label="指定模块" width="150" />
+          <el-table-column prop="module_name" label="模块" width="140" />
           <el-table-column label="用例名称" min-width="320">
             <template #default="{ row }">
               <button class="link-btn" @click="openCase(row)">{{ row.name }}</button>
             </template>
           </el-table-column>
-          <el-table-column prop="exec_type" label="类型" width="120" />
-          <el-table-column label="创建时间" width="180">
-            <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
-          </el-table-column>
+          <el-table-column prop="page_url" label="页面路径" width="190" />
+          <el-table-column prop="viewport" label="视口" width="100" />
         </el-table>
       </section>
     </main>
 
-    <el-dialog v-model="detailVisible" title="用例详情" width="760px">
+    <el-dialog v-model="detailVisible" title="UI用例详情" width="780px">
       <div v-if="currentCase" class="detail-block">
         <h3>{{ currentCase.name }}</h3>
-        <div class="request-grid">
-          <template v-for="[label, value] in requestRows(currentCase.request)" :key="label">
-            <div class="request-label">{{ label }}</div>
-            <pre>{{ value }}</pre>
-          </template>
+        <div class="info-grid">
+          <span>页面路径</span><strong>{{ currentCase.page_url }}</strong>
+          <span>执行端</span><strong>{{ currentCase.viewport }}</strong>
+          <span>预期结果</span><strong>{{ currentCase.expected }}</strong>
         </div>
-        <div class="expected-box">
-          <strong>预期结果</strong>
-          <p>{{ currentCase.expected }}</p>
-        </div>
+        <el-table :data="currentCase.steps" border>
+          <el-table-column prop="action" label="动作" width="120" />
+          <el-table-column prop="target" label="目标控件" />
+          <el-table-column prop="value" label="输入值" />
+        </el-table>
       </div>
     </el-dialog>
 
-    <el-dialog v-model="taskVisible" title="AI 测试任务" width="820px">
-      <el-form label-width="160px" class="task-form">
+    <el-dialog v-model="taskVisible" title="AI UI测试任务" width="820px">
+      <el-form label-width="150px" class="task-form">
         <el-form-item label="名称" required>
           <el-input v-model="taskForm.name" />
         </el-form-item>
         <el-form-item label="类型">
           <el-radio-group v-model="taskForm.execType">
-            <el-radio-button label="HTTP 请求" />
             <el-radio-button label="WEB 网页" />
+            <el-radio-button label="移动应用端" />
           </el-radio-group>
         </el-form-item>
         <el-form-item label="用例参数配置">
           <div class="case-summary">{{ selectedCaseNames }}</div>
         </el-form-item>
         <el-divider content-position="left">0.AI自动化系统配置参数</el-divider>
-        <el-form-item label="程序入口">
+        <el-form-item label="服务端地址">
           <el-input v-model="taskForm.baseUrl" />
+        </el-form-item>
+        <el-form-item label="浏览器">
+          <el-select v-model="taskForm.browser">
+            <el-option label="Chromium" value="Chromium" />
+            <el-option label="Firefox" value="Firefox" />
+            <el-option label="WebKit" value="WebKit" />
+          </el-select>
         </el-form-item>
         <el-form-item label="登录凭据">
           <div class="credential-row">
             <el-input v-model="taskForm.username" placeholder="username" />
             <el-input v-model="taskForm.password" placeholder="password" show-password />
           </div>
-        </el-form-item>
-        <el-form-item
-          v-for="(item, index) in selectedCases"
-          :key="item.id"
-          :label="`${index + 1}.${item.module_name}`"
-        >
-          <el-input :model-value="`username=${taskForm.username}; password=${taskForm.password}`" readonly />
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="taskForm.desc" type="textarea" :rows="2" />
@@ -354,7 +312,7 @@ onMounted(async () => {
       </template>
     </el-dialog>
 
-    <el-dialog v-model="recordsVisible" title="AI 测试执行记录" width="980px">
+    <el-dialog v-model="recordsVisible" title="AI UI测试执行记录" width="980px">
       <div class="record-toolbar">
         <el-button @click="recordsVisible = false">返回</el-button>
         <el-button @click="loadExecs">刷新</el-button>
@@ -364,7 +322,7 @@ onMounted(async () => {
         v-loading="execLoading"
         :data="execs"
         stripe
-        @selection-change="(rows: ApiAutomationExec[]) => selectedExecs = rows"
+        @selection-change="(rows: UiAutomationExec[]) => selectedExecs = rows"
       >
         <el-table-column type="selection" width="48" />
         <el-table-column prop="id" label="ID" width="80" />
@@ -372,7 +330,7 @@ onMounted(async () => {
           <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
         </el-table-column>
         <el-table-column prop="exec_status" label="执行状态" width="120" />
-        <el-table-column label="测试计划" min-width="260">
+        <el-table-column label="测试计划" min-width="280">
           <template #default="{ row }">
             <button class="link-btn" @click="openReport(row)">{{ row.name }}</button>
           </template>
@@ -386,7 +344,7 @@ onMounted(async () => {
       </el-table>
     </el-dialog>
 
-    <el-dialog v-model="reportVisible" title="AI 执行报告" width="960px">
+    <el-dialog v-model="reportVisible" title="AI UI执行报告" width="960px">
       <div v-if="currentReport?.details" class="report">
         <div class="summary">
           <strong>成功{{ currentReport.details.summary.success }}个用例，失败{{ currentReport.details.summary.failed }}个用例</strong>
@@ -398,28 +356,18 @@ onMounted(async () => {
             <el-tag :type="resultType(result)">{{ result.status }}</el-tag>
           </div>
           <div class="compare-grid">
-            <div>
-              <strong>预期结果</strong>
-              <p>{{ result.expected }}</p>
-            </div>
-            <div>
-              <strong>AI执行记录</strong>
-              <p>{{ result.ai_record }}</p>
-            </div>
+            <div><strong>预期结果</strong><p>{{ result.expected }}</p></div>
+            <div><strong>AI视觉执行记录</strong><p>{{ result.ai_record }}</p></div>
           </div>
-          <el-collapse>
-            <el-collapse-item title="执行详情" name="response">
-              <pre>{{ toJson(result.response) }}</pre>
-            </el-collapse-item>
-            <el-collapse-item title="页面动作详情" name="request">
-              <div class="request-grid compact">
-                <template v-for="[label, value] in requestRows(result.request)" :key="label">
-                  <div class="request-label">{{ label }}</div>
-                  <pre>{{ value }}</pre>
-                </template>
-              </div>
-            </el-collapse-item>
-          </el-collapse>
+          <div class="artifact-line">
+            <span>页面：{{ result.page_url }}</span>
+            <span>截图：{{ result.screenshot }}</span>
+          </div>
+          <el-table :data="result.steps" border>
+            <el-table-column prop="action" label="动作" width="120" />
+            <el-table-column prop="target" label="目标控件" />
+            <el-table-column prop="value" label="输入值" />
+          </el-table>
         </div>
       </div>
     </el-dialog>
@@ -427,7 +375,7 @@ onMounted(async () => {
 </template>
 
 <style lang="scss" scoped>
-.automation-page {
+.ui-page {
   min-height: 100vh;
   background: #f4f6f9;
   color: #1f2937;
@@ -449,7 +397,6 @@ onMounted(async () => {
 .link-btn {
   border: 0;
   background: transparent;
-  color: inherit;
   cursor: pointer;
 }
 
@@ -457,6 +404,7 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: 12px;
+  color: inherit;
   font-size: 22px;
   font-weight: 800;
   justify-self: start;
@@ -468,7 +416,7 @@ onMounted(async () => {
   border-radius: 8px;
   display: inline-grid;
   place-items: center;
-  background: linear-gradient(135deg, #2563eb, #16a34a);
+  background: linear-gradient(135deg, #ec4899, #f43f5e);
   font-size: 14px;
 }
 
@@ -486,6 +434,7 @@ onMounted(async () => {
 
 .exit-btn,
 .link-btn {
+  color: inherit;
   font-size: 16px;
 }
 
@@ -548,11 +497,8 @@ onMounted(async () => {
 }
 
 .link-btn {
-  border: 0;
-  background: transparent;
   color: #2563eb;
   font-weight: 700;
-  cursor: pointer;
   text-align: left;
 }
 
@@ -562,42 +508,14 @@ onMounted(async () => {
   font-size: 18px;
 }
 
-.request-grid {
+.info-grid {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
-  border: 1px solid #e5e7eb;
-  border-bottom: 0;
-}
-
-.request-grid.compact {
-  grid-template-columns: 100px minmax(0, 1fr);
-}
-
-.request-label,
-.request-grid pre {
-  margin: 0;
-  padding: 10px 12px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.request-label {
-  background: #f8fafc;
-  color: #475569;
-  font-weight: 700;
-}
-
-pre {
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: Consolas, Monaco, monospace;
-  font-size: 13px;
-}
-
-.expected-box {
-  margin-top: 16px;
-  padding: 14px 16px;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px 14px;
+  padding: 14px;
   background: #f8fafc;
   border-radius: 6px;
+  margin-bottom: 16px;
 }
 
 .task-form {
@@ -621,8 +539,8 @@ pre {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 16px;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
+  background: #fdf2f8;
+  border: 1px solid #fbcfe8;
   border-radius: 6px;
   margin-bottom: 16px;
 }
@@ -659,6 +577,13 @@ pre {
   }
 }
 
+.artifact-line {
+  display: flex;
+  gap: 20px;
+  color: #64748b;
+  margin: 8px 0 14px;
+}
+
 @media (max-width: 860px) {
   .topbar {
     grid-template-columns: 1fr;
@@ -686,7 +611,7 @@ pre {
     align-items: stretch;
   }
 }
-.automation-page {
+.ui-page {
   background: #f5f7fa;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -704,7 +629,7 @@ pre {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
 }
 
-.automation-page {
+.ui-page {
   min-height: 100vh;
   overflow-x: hidden;
 }

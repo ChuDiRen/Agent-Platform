@@ -28,7 +28,7 @@ function handleUse(agent: AgentInfo) {
     return
   }
   if (agent.icon === 'ui' || agent.name.includes('界面UI')) {
-    ElMessage.warning('界面UI自动化脚本开发中，即将开放')
+    router.push('/ui-automation')
     return
   }
   if (agent.icon === 'api-auto' || agent.name.includes('接口自动化')) {

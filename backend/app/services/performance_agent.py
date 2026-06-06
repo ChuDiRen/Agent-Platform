@@ -9,13 +9,7 @@ from app.schemas.performance import (
 )
 
 
-DEFAULT_METRICS = [
-    PerformanceMetric(name="平均响应时间", value=842, unit="ms", threshold=500),
-    PerformanceMetric(name="P95响应时间", value=1680, unit="ms", threshold=1200),
-    PerformanceMetric(name="错误率", value=2.8, unit="%", threshold=1),
-    PerformanceMetric(name="吞吐量", value=186, unit="req/s", threshold=220),
-    PerformanceMetric(name="CPU使用率", value=76, unit="%", threshold=80),
-]
+DEFAULT_METRICS: list[PerformanceMetric] = []
 
 
 def _extract_metrics(raw_text: str) -> list[PerformanceMetric]:

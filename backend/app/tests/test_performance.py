@@ -3,8 +3,8 @@ def test_performance_analyze_list_detail_delete(client):
         "/api/v1/performance/analyze",
         json={
             "project_id": 1,
-            "name": "登录链路压测分析",
-            "scenario": "互联网小说网站登录压测",
+            "name": "性能分析",
+            "scenario": "核心接口压测",
             "raw_text": "avg 860ms, P95 1700ms, error 2.5%, throughput 180, CPU 76%",
         },
     )

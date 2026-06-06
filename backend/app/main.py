@@ -16,6 +16,7 @@ from app.api.v1.endpoints import (
     api_documents,
     test_cases,
     api_automation,
+    ui_automation,
     performance,
 )
 
@@ -43,6 +44,7 @@ app.include_router(test_cases.router, prefix=f"{settings.API_V1_PREFIX}/test-cas
 app.include_router(documents.router, prefix=f"{settings.API_V1_PREFIX}/documents", tags=["documents"])
 app.include_router(api_documents.router, prefix=f"{settings.API_V1_PREFIX}/api-documents", tags=["api-documents"])
 app.include_router(api_automation.router, prefix=f"{settings.API_V1_PREFIX}/api-automation", tags=["api-automation"])
+app.include_router(ui_automation.router, prefix=f"{settings.API_V1_PREFIX}/ui-automation", tags=["ui-automation"])
 app.include_router(performance.router, prefix=f"{settings.API_V1_PREFIX}/performance", tags=["performance"])
 
 

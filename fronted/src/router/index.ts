@@ -60,6 +60,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'AI接口文档分析' },
   },
   {
+    path: '/ui-automation',
+    name: 'UiAutomationAgent',
+    component: () => import('@/views/UiAutomationAgent.vue'),
+    meta: { title: 'AI界面UI自动化脚本' },
+  },
+  {
     path: '/api-automation',
     name: 'ApiAutomationAgent',
     component: () => import('@/views/ApiAutomationAgent.vue'),

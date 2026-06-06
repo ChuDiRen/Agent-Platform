@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import AgentPageHeader from '@/components/AgentPageHeader.vue'
 import {
   createTestDataTemplate,
   generateTestData,
@@ -16,7 +16,6 @@ import {
 
 defineOptions({ name: 'TestDataGenerator' })
 
-const router = useRouter()
 const count = ref(10)
 const format = ref<TestDataFormat>('json')
 const lang = ref<TestDataLanguage>('zh')
@@ -154,18 +153,7 @@ onMounted(async () => {
 
 <template>
   <div class="generator-page">
-    <header class="topbar">
-      <div class="brand">
-        <button class="icon-btn" @click="router.push('/agent-hub')" aria-label="返回">
-          <span>‹</span>
-        </button>
-        <div class="logo-mark">AI</div>
-        <span>华测 AI+数据生成</span>
-      </div>
-      <div class="top-actions">
-        <button class="text-btn" @click="router.push('/projects')">退出项目</button>
-      </div>
-    </header>
+    <AgentPageHeader title="测试数据生成助手" />
 
     <main class="workspace">
       <section class="panel config-panel">
@@ -217,14 +205,14 @@ onMounted(async () => {
         </div>
 
         <div class="section-title">
-          <span>结果示例参考</span>
+          <span>结果要求</span>
         </div>
         <el-input
           v-model="hint"
           type="textarea"
           :rows="4"
           resize="vertical"
-          placeholder="输入你期望的结果示例或额外要求（hint字段）"
+          placeholder="输入你期望的数据特征、约束或额外要求"
         />
 
         <div class="field-head">
@@ -301,6 +289,10 @@ onMounted(async () => {
   align-items: center;
 }
 
+.top-actions {
+  gap: 28px;
+}
+
 .brand {
   gap: 10px;
   font-size: 17px;
@@ -315,17 +307,6 @@ onMounted(async () => {
   @include flex-center;
   font-size: 11px;
   font-weight: 800;
-}
-
-.icon-btn {
-  width: 30px;
-  height: 30px;
-  border: 0;
-  border-radius: $radius-sm;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  font-size: 24px;
-  cursor: pointer;
 }
 
 .text-btn {
@@ -563,6 +544,80 @@ pre {
   .field-row {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+}
+.generator-page {
+  background: #f5f7fa;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.workspace {
+  max-width: 1280px;
+  width: min(1280px, calc(100vw - 48px));
+  margin: 0 auto 48px;
+}
+
+.panel {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.panel-head h1 {
+  color: #1f2a3e;
+}
+
+.generator-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  width: min(1040px, calc(100vw - 48px));
+  max-width: none;
+  margin: 0 auto 40px;
+}
+
+.panel {
+  min-width: 0;
+}
+
+.config-panel {
+  padding: 22px 24px;
+}
+
+.panel-head,
+.result-head {
+  gap: 14px;
+}
+
+.actions,
+.result-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.basic-grid {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.field-row {
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 160px) minmax(160px, 1fr) 42px;
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    width: min(100%, calc(100vw - 32px));
+  }
+
+  .basic-grid,
+  .field-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>

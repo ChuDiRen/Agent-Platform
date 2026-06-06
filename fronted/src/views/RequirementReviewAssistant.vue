@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import AgentPageHeader from '@/components/AgentPageHeader.vue'
 import {
   createDocument,
   deleteDocument,
@@ -14,7 +14,6 @@ import {
 
 defineOptions({ name: 'RequirementReviewAssistant' })
 
-const router = useRouter()
 const projectId = 1
 const documents = ref<RequirementDocument[]>([])
 const selectedId = ref<number | null>(null)
@@ -83,44 +82,24 @@ async function addChild(parent: RequirementDocument) {
 }
 
 async function importDocument() {
-  const content = `# 功能性需求
-
-## 系统登录功能
-
-### 功能概述
-- 功能描述：出租屋管理系统登录功能，提供用户身份验证入口，确保系统访问安全。用户需输入正确账号密码才能进入系统。
-- 功能入口：系统首页或直接访问登录URL时展示的登录表单。
-
-### 界面原型
-账号输入框
-密码输入框
-登录按钮
-`
-  const existing = documents.value.find((item) => item.name === '系统登录功能')
-  if (existing) {
-    const updated = await updateDocument(existing.id, { content, title: '系统登录功能' })
-    documents.value = documents.value.map((item) => (item.id === updated.id ? updated : item))
-    selectDocument(updated)
-  } else {
-    const parent = roots.value.find((item) => item.is_directory) || await createDocument({
-      project_id: projectId,
-      name: '功能性需求',
-      title: '功能性需求',
-      is_directory: true,
-    })
-    if (!documents.value.some((item) => item.id === parent.id)) documents.value.push(parent)
-    const created = await createDocument({
-      project_id: projectId,
-      parent_id: parent.id,
-      name: '系统登录功能',
-      title: '系统登录功能',
-      content,
-      is_directory: false,
-    })
-    documents.value.push(created)
-    selectDocument(created)
-  }
-  ElMessage.success('文档已导入')
+  const parent = roots.value.find((item) => item.is_directory) || await createDocument({
+    project_id: projectId,
+    name: '需求文档',
+    title: '需求文档',
+    is_directory: true,
+  })
+  if (!documents.value.some((item) => item.id === parent.id)) documents.value.push(parent)
+  const created = await createDocument({
+    project_id: projectId,
+    parent_id: parent.id,
+    name: '未命名需求',
+    title: '未命名需求',
+    content: '',
+    is_directory: false,
+  })
+  documents.value.push(created)
+  selectDocument(created)
+  ElMessage.success('已创建空白需求')
 }
 
 async function saveCurrent() {
@@ -183,16 +162,7 @@ onMounted(async () => {
 
 <template>
   <div class="review-page">
-    <header class="topbar">
-      <div class="brand" @click="router.push('/agent-hub')">
-        <div class="logo-mark" />
-        <span>华测 AI+需求助手</span>
-      </div>
-      <div class="top-links">
-        <span>{{ selectedDocument?.title || '华测教育001接口--干寻' }}</span>
-        <button @click="router.push('/projects')">退出项目</button>
-      </div>
-    </header>
+    <AgentPageHeader title="需求评审助手" />
 
     <main class="layout">
       <aside class="sidebar">
@@ -230,8 +200,8 @@ onMounted(async () => {
 
       <section class="workspace">
         <div class="workspace-head">
-          <span>{{ pathText(selectedDocument) }}</span>
-          <div>
+          <span class="workspace-title">{{ pathText(selectedDocument) }}</span>
+          <div class="workspace-actions">
             <button class="green-btn" @click="runReview">AI需求评审</button>
             <button class="blue-btn" @click="saveCurrent">保存需求</button>
           </div>
@@ -251,8 +221,6 @@ onMounted(async () => {
         </div>
       </section>
     </main>
-
-    <footer>© 2025 华测教育 - AI智能测试研究院.版权所有</footer>
 
     <el-dialog v-model="reviewVisible" :title="`AI 评审 - ${selectedDocument?.name || '需求'}`" width="760px">
       <div class="tabs">
@@ -554,6 +522,160 @@ footer {
 
   .editor {
     padding: 24px;
+  }
+}
+.review-page {
+  min-height: 100vh;
+  background: #f5f7fa;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  overflow-x: hidden;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  gap: 24px;
+  width: min(1280px, calc(100vw - 48px));
+  max-width: none;
+  margin: 0 auto;
+  padding: 0 0 40px;
+}
+
+.sidebar,
+.workspace {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  min-width: 0;
+  min-height: 0;
+}
+
+.sidebar {
+  align-self: start;
+  min-height: calc(100vh - 154px);
+  max-height: calc(100vh - 154px);
+  overflow: hidden;
+}
+
+.side-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 18px;
+}
+
+.side-actions .blue-btn {
+  width: 100%;
+}
+
+.tree {
+  max-height: calc(100vh - 250px);
+  overflow: auto;
+  padding: 12px 14px 18px;
+}
+
+.tree-row {
+  grid-template-columns: 16px 16px minmax(0, 1fr) auto auto auto;
+  gap: 4px;
+  min-height: 34px;
+  border-radius: 10px;
+  padding: 4px 6px;
+
+  &.child {
+    grid-template-columns: 16px minmax(0, 1fr) auto auto auto;
+    padding-left: 22px;
+  }
+
+  button {
+    padding: 0 2px;
+  }
+}
+
+.workspace {
+  padding: 22px 24px 26px;
+}
+
+.workspace-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 60px;
+  height: auto;
+  padding: 12px 18px;
+  border-radius: 18px;
+  background: #eef6ff;
+  color: #1E88E5;
+}
+
+.workspace-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.editor-shell {
+  margin-top: 18px;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.toolbar {
+  justify-content: center;
+  padding: 0 16px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.editor {
+  min-height: calc(100vh - 322px);
+  padding: 32px clamp(28px, 9vw, 120px);
+  resize: none;
+}
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+    width: min(100%, calc(100vw - 32px));
+  }
+
+  .sidebar {
+    min-height: auto;
+    max-height: none;
+  }
+
+  .tree {
+    max-height: 260px;
+  }
+}
+
+@media (max-width: 720px) {
+  .workspace {
+    padding: 16px;
+  }
+
+  .workspace-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .workspace-actions,
+  .workspace-actions button {
+    width: 100%;
+  }
+
+  .editor {
+    min-height: 420px;
+    padding: 22px;
   }
 }
 </style>

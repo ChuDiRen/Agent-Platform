@@ -40,63 +40,7 @@ def _case(
     )
 
 
-API_AUTOMATION_CASES: list[ApiAutomationCase] = [
-    _case(
-        case_id=10001,
-        module_id=4101,
-        module_name="用户登录",
-        priority=1,
-        name="验证用户使用正确手机号和密码登录",
-        path="/user/login",
-        method="POST",
-        body={"username": "{{username}}", "password": "{{password}}"},
-        expected="HTTP状态码为200，业务code为200，返回登录用户信息或token。",
-    ),
-    _case(
-        case_id=10002,
-        module_id=4101,
-        module_name="用户登录",
-        priority=1,
-        name="验证用户密码错误时登录失败",
-        path="/user/login",
-        method="POST",
-        body={"username": "{{username}}", "password": "wrong-password"},
-        expected="HTTP状态码为200或401，业务响应提示账号或密码错误，不返回登录凭据。",
-    ),
-    _case(
-        case_id=10003,
-        module_id=4101,
-        module_name="用户登录",
-        priority=2,
-        name="验证登录接口缺少用户名时返回参数校验错误",
-        path="/user/login",
-        method="POST",
-        body={"password": "{{password}}"},
-        expected="响应体包含用户名不能为空或参数校验失败提示。",
-    ),
-    _case(
-        case_id=10004,
-        module_id=4102,
-        module_name="小说搜索",
-        priority=2,
-        name="验证按关键词搜索小说列表",
-        path="/book/search",
-        method="GET",
-        body={},
-        expected="HTTP状态码为200，返回包含keyword匹配结果的列表。",
-    ),
-    _case(
-        case_id=10005,
-        module_id=4103,
-        module_name="章节详情",
-        priority=3,
-        name="验证获取小说章节详情",
-        path="/chapter/detail",
-        method="GET",
-        body={},
-        expected="HTTP状态码为200，返回章节标题、正文和下一章信息。",
-    ),
-]
+API_AUTOMATION_CASES: list[ApiAutomationCase] = []
 
 
 def list_api_automation_cases(
@@ -130,7 +74,7 @@ def build_execution_details(
     case_ids: list[int],
     exec_param: dict[str, Any],
 ) -> ApiExecutionDetails:
-    base_url = str(exec_param.get("base_url") or "http://novel.hctestedu.com").rstrip("/")
+    base_url = str(exec_param.get("base_url") or "").rstrip("/")
     credential = exec_param.get("credential") or {}
     case_params = exec_param.get("case_params") or {}
     results: list[ApiExecutionResult] = []
@@ -142,8 +86,8 @@ def build_execution_details(
         request = case.request.model_copy(deep=True)
         body = request.body_json.copy()
         merged_params = {
-            "username": credential.get("username") or case_params.get(str(case_id), {}).get("username") or "18511114444",
-            "password": credential.get("password") or case_params.get(str(case_id), {}).get("password") or "123456",
+            "username": credential.get("username") or case_params.get(str(case_id), {}).get("username") or "",
+            "password": credential.get("password") or case_params.get(str(case_id), {}).get("password") or "",
         }
         for key, value in list(body.items()):
             if isinstance(value, str) and value.startswith("{{") and value.endswith("}}"):

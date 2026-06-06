@@ -156,6 +156,8 @@ async function handleRegister() {
 </template>
 
 <style scoped lang="scss">
+@use "sass:color";
+
 .register-page {
   display: flex;
   width: 100%;
@@ -320,7 +322,7 @@ async function handleRegister() {
     transition: color $transition-fast;
 
     &:hover {
-      color: darken($accent-secondary, 8%);
+      color: color.adjust($accent-secondary, $lightness: -8%);
     }
   }
 }

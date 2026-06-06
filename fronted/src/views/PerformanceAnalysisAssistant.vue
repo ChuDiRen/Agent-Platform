@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import AgentPageHeader from '@/components/AgentPageHeader.vue'
 import {
   analyzePerformance,
   deletePerformanceRecord,
@@ -12,30 +12,42 @@ import {
 
 defineOptions({ name: 'PerformanceAnalysisAssistant' })
 
-const router = useRouter()
 const projectId = 1
 const loading = ref(false)
 const recordsLoading = ref(false)
 const records = ref<PerformanceRecord[]>([])
 const currentRecord = ref<PerformanceRecord | null>(null)
+const detailRecord = ref<PerformanceRecord | null>(null)
 const detailVisible = ref(false)
 
 const form = reactive({
-  name: '登录链路压测分析',
-  scenario: '互联网小说网站登录压测',
-  rawText: 'avg 860ms, P95 1700ms, error 2.5%, throughput 180, CPU 76%',
+  name: '',
+  scenario: '',
+  rawText: '',
 })
 
 const metrics = ref<PerformanceMetric[]>([
-  { name: '平均响应时间', value: 860, unit: 'ms', threshold: 500 },
-  { name: 'P95响应时间', value: 1700, unit: 'ms', threshold: 1200 },
-  { name: '错误率', value: 2.5, unit: '%', threshold: 1 },
-  { name: '吞吐量', value: 180, unit: 'req/s', threshold: 220 },
-  { name: 'CPU使用率', value: 76, unit: '%', threshold: 80 },
+  { name: '', value: 0, unit: '', threshold: 0 },
 ])
 
 const latestAnalysis = computed(() => currentRecord.value?.configs.analysis || null)
 const latestMetrics = computed(() => currentRecord.value?.configs.metrics || metrics.value)
+
+function isDemoPerformanceRecord(record: PerformanceRecord) {
+  const config = record.configs
+  const metricNames = new Set((config.metrics || []).map((item) => item.name))
+  return (
+    config.name === 'smoke' ||
+    config.scenario.includes('互联网小说') ||
+    (
+      metricNames.has('平均响应时间') &&
+      metricNames.has('P95响应时间') &&
+      metricNames.has('错误率') &&
+      metricNames.has('吞吐量') &&
+      metricNames.has('CPU使用率')
+    )
+  )
+}
 
 function metricStatus(metric: PerformanceMetric) {
   if (metric.threshold === undefined || metric.threshold === null) return 'info'
@@ -86,15 +98,15 @@ async function runAnalyze() {
 async function loadRecords() {
   recordsLoading.value = true
   try {
-    records.value = await getPerformanceRecords(projectId)
-    if (!currentRecord.value && records.value.length) currentRecord.value = records.value[0]
+    const data = await getPerformanceRecords(projectId)
+    records.value = data.filter((item) => !isDemoPerformanceRecord(item))
   } finally {
     recordsLoading.value = false
   }
 }
 
 function openRecord(record: PerformanceRecord) {
-  currentRecord.value = record
+  detailRecord.value = record
   detailVisible.value = true
 }
 
@@ -106,7 +118,8 @@ async function removeRecord(record: PerformanceRecord) {
   })
   await deletePerformanceRecord(record.id)
   records.value = records.value.filter((item) => item.id !== record.id)
-  if (currentRecord.value?.id === record.id) currentRecord.value = records.value[0] || null
+  if (currentRecord.value?.id === record.id) currentRecord.value = null
+  if (detailRecord.value?.id === record.id) detailRecord.value = null
   ElMessage.success('已删除')
 }
 
@@ -115,30 +128,12 @@ function formatTime(value?: string | null) {
   return new Date(value).toLocaleString('zh-CN', { hour12: false })
 }
 
-function loadSample() {
-  form.rawText = 'avg 920ms, P95 1880ms, error 3.4%, throughput 164, CPU 82%'
-  metrics.value = [
-    { name: '平均响应时间', value: 920, unit: 'ms', threshold: 500 },
-    { name: 'P95响应时间', value: 1880, unit: 'ms', threshold: 1200 },
-    { name: '错误率', value: 3.4, unit: '%', threshold: 1 },
-    { name: '吞吐量', value: 164, unit: 'req/s', threshold: 220 },
-    { name: 'CPU使用率', value: 82, unit: '%', threshold: 80 },
-  ]
-}
-
 onMounted(loadRecords)
 </script>
 
 <template>
   <div class="performance-page">
-    <header class="topbar">
-      <button class="brand" @click="router.push('/agent-hub')">
-        <span class="brand-mark">AI</span>
-        <span>华测 AI+性能分析</span>
-      </button>
-      <div class="project-name">互联网小说网站</div>
-      <button class="exit-btn" @click="router.push('/agent-hub')">退出项目</button>
-    </header>
+    <AgentPageHeader title="性能分析助手" />
 
     <main class="workspace">
       <section class="analysis-panel">
@@ -148,7 +143,6 @@ onMounted(loadRecords)
             <p>导入压测指标，自动识别瓶颈、断言风险并生成优化建议。</p>
           </div>
           <div class="head-actions">
-            <el-button @click="loadSample">载入样例</el-button>
             <el-button type="primary" :loading="loading" @click="runAnalyze">开始 AI 分析</el-button>
           </div>
         </div>
@@ -190,7 +184,7 @@ onMounted(loadRecords)
         </div>
         <div v-else class="empty-result">暂无分析结果</div>
 
-        <div class="metric-grid">
+        <div v-if="latestAnalysis" class="metric-grid">
           <div v-for="metric in latestMetrics" :key="metric.name" class="metric-card">
             <span>{{ metric.name }}</span>
             <strong>{{ metric.value }}{{ metric.unit }}</strong>
@@ -239,20 +233,20 @@ onMounted(loadRecords)
     </main>
 
     <el-dialog v-model="detailVisible" title="性能分析报告" width="860px">
-      <div v-if="currentRecord" class="report-detail">
+      <div v-if="detailRecord" class="report-detail">
         <div class="score-card compact">
-          <div class="score">{{ currentRecord.configs.analysis?.score ?? '-' }}</div>
+          <div class="score">{{ detailRecord.configs.analysis?.score ?? '-' }}</div>
           <div>
-            <strong>{{ currentRecord.configs.name }}</strong>
-            <p>{{ currentRecord.configs.analysis?.summary }}</p>
+            <strong>{{ detailRecord.configs.name }}</strong>
+            <p>{{ detailRecord.configs.analysis?.summary }}</p>
           </div>
         </div>
         <h3>趋势判断</h3>
         <ul>
-          <li v-for="trend in currentRecord.configs.analysis?.trends || []" :key="trend">{{ trend }}</li>
+          <li v-for="trend in detailRecord.configs.analysis?.trends || []" :key="trend">{{ trend }}</li>
         </ul>
         <h3>配置 JSON</h3>
-        <pre>{{ JSON.stringify(currentRecord.configs, null, 2) }}</pre>
+        <pre>{{ JSON.stringify(detailRecord.configs, null, 2) }}</pre>
       </div>
     </el-dialog>
   </div>
@@ -276,6 +270,7 @@ onMounted(loadRecords)
 }
 
 .brand,
+.top-actions,
 .exit-btn,
 .link-btn {
   border: 0;
@@ -308,8 +303,15 @@ onMounted(loadRecords)
   font-weight: 700;
 }
 
-.exit-btn {
+.top-actions {
   justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.exit-btn,
+.link-btn {
   color: inherit;
   font-size: 16px;
 }
@@ -522,6 +524,82 @@ onMounted(loadRecords)
   .project-name,
   .exit-btn {
     justify-self: start;
+  }
+
+  .metric-row,
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.performance-page {
+  background: #f5f7fa;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.workspace {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+.analysis-panel,
+.result-panel,
+.history-panel {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.performance-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 24px;
+  width: min(1280px, calc(100vw - 48px));
+  max-width: none;
+  padding: 0 0 40px;
+}
+
+.analysis-panel,
+.result-panel,
+.history-panel {
+  min-width: 0;
+}
+
+.analysis-panel,
+.result-panel {
+  padding: 22px 24px;
+}
+
+.panel-head {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.head-actions {
+  margin-left: auto;
+}
+
+.metric-row {
+  grid-template-columns: minmax(140px, 1fr) minmax(120px, 150px) minmax(90px, 120px) minmax(120px, 150px) auto;
+}
+
+.metric-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.history-panel {
+  padding: 18px 20px 22px;
+}
+
+@media (max-width: 1060px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    width: min(100%, calc(100vw - 32px));
   }
 
   .metric-row,

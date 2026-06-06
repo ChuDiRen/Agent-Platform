@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type UploadFile } from 'element-plus'
+import AgentPageHeader from '@/components/AgentPageHeader.vue'
 import {
   analyzeApiDocument,
   createApiDocument,
@@ -14,7 +14,6 @@ import {
 
 defineOptions({ name: 'ApiDocumentAnalysis' })
 
-const router = useRouter()
 const projectId = 1
 const documents = ref<ApiDocument[]>([])
 const selectedId = ref<number | null>(null)
@@ -46,59 +45,11 @@ function currentPath(document: ApiDocument | null) {
   return `当前查看 - ${parent ? `${parent.name}` : '接口文档'}${document.is_directory ? '' : `\\${document.name}`}`
 }
 
-function seedContent() {
-  return `# 一、接口信息
-
-## 1. 简要描述
-用于实现账号登录功能，验证用户提交的账号、密码等信息，完成身份校验并返回登录结果。
-
-## 2. 请求 URL
-
-\`\`\`
-http://kaoshi.project.hctestedu.com/api/user/login
-\`\`\`
-
-## 3. 请求方式
-
-\`\`\`
-POST
-\`\`\`
-
-# 二、公共参数
-
-# 三、请求参数
-
-| 参数名 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| username | string | 是 | 登录账号 |
-| password | string | 是 | 登录密码 |
-
-# 四、响应参数
-
-`
-}
-
 async function loadDocuments() {
   documents.value = await getApiDocuments(projectId)
-  if (!documents.value.length) {
-    const parent = await createApiDocument({
-      project_id: projectId,
-      name: '学生端登录接口文档',
-      title: '学生端登录接口文档',
-      is_directory: true,
-    })
-    const child = await createApiDocument({
-      project_id: projectId,
-      parent_id: parent.id,
-      name: '学生端登录接口文档20050830',
-      title: '学生端登录接口文档20050830',
-      content: seedContent(),
-      is_directory: false,
-    })
-    documents.value = [parent, child]
-  }
   if (!selectedId.value) {
-    selectDocument(documents.value.find((item) => !item.is_directory) || documents.value[0])
+    const firstDocument = documents.value.find((item) => !item.is_directory) || documents.value[0]
+    if (firstDocument) selectDocument(firstDocument)
   }
 }
 
@@ -264,16 +215,7 @@ onMounted(loadDocuments)
 
 <template>
   <div class="api-page">
-    <header class="app-header">
-      <div class="brand" @click="router.push('/agent-hub')">
-        <span class="brand-mark" />
-        <span>华测 AI+接口助手</span>
-      </div>
-      <div class="project-actions">
-        <span>华测教育001接口--干寻</span>
-        <button @click="router.push('/projects')">退出项目</button>
-      </div>
-    </header>
+    <AgentPageHeader title="接口文档分析助手" />
 
     <main class="api-layout">
       <aside class="sidebar">
@@ -410,7 +352,7 @@ onMounted(loadDocuments)
 
     <el-dialog v-model="processingVisible" width="720px" :show-close="false" :close-on-click-modal="false">
       <div class="processing">
-        <h3>华测教育 - AI智能体数字员工 - 工作中...</h3>
+        <h3>AI智能体正在处理...</h3>
         <p class="spin">AI正在处理中...</p>
         <pre>开始生成内容...
 ```json
@@ -755,6 +697,128 @@ button {
 
   .editor {
     padding: 20px;
+  }
+}
+.api-page {
+  background: #f5f7fa;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.api-layout {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+.sidebar,
+.workspace {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.workspace-head {
+  border-radius: 18px;
+  background: #eef6ff;
+  color: #1E88E5;
+}
+
+.api-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.api-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  gap: 24px;
+  width: min(1280px, calc(100vw - 48px));
+  max-width: none;
+  padding: 0 0 40px;
+}
+
+.sidebar,
+.workspace {
+  min-width: 0;
+  min-height: 0;
+}
+
+.sidebar {
+  min-height: calc(100vh - 154px);
+  max-height: calc(100vh - 154px);
+  overflow: hidden;
+}
+
+.side-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 18px;
+}
+
+.side-actions .primary-btn {
+  width: 100%;
+}
+
+.doc-list {
+  max-height: calc(100vh - 250px);
+  overflow: auto;
+}
+
+.doc-row {
+  grid-template-columns: 20px minmax(0, 1fr) auto auto auto;
+  border-radius: 10px;
+}
+
+.workspace {
+  padding: 22px 24px 26px;
+}
+
+.workspace-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  height: auto;
+  min-height: 60px;
+  padding: 12px 18px;
+}
+
+.head-buttons {
+  margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.editor-panel {
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.toolbar {
+  padding: 0 16px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.editor {
+  height: auto;
+  min-height: calc(100vh - 322px);
+  padding: 32px clamp(28px, 9vw, 120px);
+}
+
+@media (max-width: 1024px) {
+  .api-layout {
+    grid-template-columns: 1fr;
+    width: min(100%, calc(100vw - 32px));
+  }
+
+  .sidebar {
+    min-height: auto;
+    max-height: none;
+  }
+
+  .doc-list {
+    max-height: 260px;
   }
 }
 </style>
