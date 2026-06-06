@@ -42,6 +42,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'AI测试数据生成' },
   },
   {
+    path: '/ai-test-cases',
+    name: 'AITestCaseAgent',
+    component: () => import('@/views/AITestCaseAgent.vue'),
+    meta: { title: 'AI接口用例设计助手' },
+  },
+  {
     path: '/requirement-review',
     name: 'RequirementReviewAssistant',
     component: () => import('@/views/RequirementReviewAssistant.vue'),
@@ -52,6 +58,18 @@ const routes: RouteRecordRaw[] = [
     name: 'ApiDocumentAnalysis',
     component: () => import('@/views/ApiDocumentAnalysis.vue'),
     meta: { title: 'AI接口文档分析' },
+  },
+  {
+    path: '/api-automation',
+    name: 'ApiAutomationAgent',
+    component: () => import('@/views/ApiAutomationAgent.vue'),
+    meta: { title: 'AI接口自动化脚本助手' },
+  },
+  {
+    path: '/performance-analysis',
+    name: 'PerformanceAnalysisAssistant',
+    component: () => import('@/views/PerformanceAnalysisAssistant.vue'),
+    meta: { title: 'AI性能数据分析助手' },
   },
 ]
 

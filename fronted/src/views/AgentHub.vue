@@ -27,6 +27,26 @@ function handleUse(agent: AgentInfo) {
     router.push('/test-data-generator')
     return
   }
+  if (agent.icon === 'ui' || agent.name.includes('界面UI')) {
+    ElMessage.warning('界面UI自动化脚本开发中，即将开放')
+    return
+  }
+  if (agent.icon === 'api-auto' || agent.name.includes('接口自动化')) {
+    router.push('/api-automation')
+    return
+  }
+  if (agent.icon === 'perf' || agent.name.includes('性能数据分析')) {
+    router.push('/performance-analysis')
+    return
+  }
+  if (agent.icon === 'api-case' || agent.name.includes('接口用例')) {
+    router.push('/ai-test-cases')
+    return
+  }
+  if (agent.icon === 'testcase' || agent.name.includes('测试用例')) {
+    router.push('/ai-test-cases')
+    return
+  }
   if (agent.icon === 'api-doc' || agent.name.includes('接口文档分析')) {
     router.push('/interface-document-analysis')
     return

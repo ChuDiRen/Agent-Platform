@@ -7,7 +7,17 @@ from app.core.security import get_password_hash
 from app.db.session import SessionLocal
 from app.models.user import User
 from app.models.agent import Agent
-from app.api.v1.endpoints import users, projects, agents, test_data, documents, api_documents
+from app.api.v1.endpoints import (
+    users,
+    projects,
+    agents,
+    test_data,
+    documents,
+    api_documents,
+    test_cases,
+    api_automation,
+    performance,
+)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -29,8 +39,11 @@ app.include_router(users.router, prefix=f"{settings.API_V1_PREFIX}/users", tags=
 app.include_router(projects.router, prefix=f"{settings.API_V1_PREFIX}/projects", tags=["projects"])
 app.include_router(agents.router, prefix=f"{settings.API_V1_PREFIX}/agents", tags=["agents"])
 app.include_router(test_data.router, prefix=f"{settings.API_V1_PREFIX}/test-data", tags=["test-data"])
+app.include_router(test_cases.router, prefix=f"{settings.API_V1_PREFIX}/test-cases", tags=["test-cases"])
 app.include_router(documents.router, prefix=f"{settings.API_V1_PREFIX}/documents", tags=["documents"])
 app.include_router(api_documents.router, prefix=f"{settings.API_V1_PREFIX}/api-documents", tags=["api-documents"])
+app.include_router(api_automation.router, prefix=f"{settings.API_V1_PREFIX}/api-automation", tags=["api-automation"])
+app.include_router(performance.router, prefix=f"{settings.API_V1_PREFIX}/performance", tags=["performance"])
 
 
 SEED_AGENTS = [
