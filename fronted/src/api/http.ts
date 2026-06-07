@@ -1,17 +1,46 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+import { ref } from 'vue'
 import { getToken } from '@/utils/auth'
 import NProgress from '@/utils/nprogress'
 import { baseUrl } from './baseUrl'
+import { API_SUCCESS_CODE } from '@/types/api'
 
+// ---------------------------------------------------------------------------
+// Loading state management
+// ---------------------------------------------------------------------------
+const pendingCount = ref(0)
+
+/** 是否有请求正在进行 */
+export const isLoading = ref(false)
+
+function incLoading() {
+  pendingCount.value++
+  isLoading.value = true
+}
+
+function decLoading() {
+  pendingCount.value = Math.max(0, pendingCount.value - 1)
+  if (pendingCount.value === 0) {
+    isLoading.value = false
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Axios instance
+// ---------------------------------------------------------------------------
 const service = axios.create({
   baseURL: baseUrl,
   timeout: 15000,
 })
 
+// ---------------------------------------------------------------------------
+// Request interceptor
+// ---------------------------------------------------------------------------
 service.interceptors.request.use(
   (config) => {
     NProgress.start()
+    incLoading()
     const token = getToken()
     if (token) {
       config.headers['Authorization'] = token
@@ -19,29 +48,57 @@ service.interceptors.request.use(
     return config
   },
   (error) => {
+    decLoading()
     return Promise.reject(error)
   },
 )
 
+// ---------------------------------------------------------------------------
+// Response interceptor
+// 所有接口必须返回统一格式: { code: number, message: string, data: T }
+// ---------------------------------------------------------------------------
 service.interceptors.response.use(
   (response: AxiosResponse) => {
     NProgress.done()
-    if (response.status === 200) {
-      return response.data
+    decLoading()
+
+    if (response.status !== 200) {
+      ElMessage.error(response.data?.message || '请求失败')
+      return Promise.reject(new Error('请求失败'))
     }
-    ElMessage.error(response.data?.message || '请求失败')
-    return Promise.reject(new Error('请求失败'))
+
+    const body = response.data
+
+    // 统一响应格式校验
+    if (body.code === API_SUCCESS_CODE) {
+      return body.data
+    }
+
+    // 业务错误
+    ElMessage.error(body.message || '请求失败')
+    return Promise.reject(new Error(body.message || '请求失败'))
   },
   (error) => {
     NProgress.done()
-    if (error.response?.status === 401) {
+    decLoading()
+
+    const status = error.response?.status
+    if (status === 401) {
       ElMessage.error('登录已过期，请重新登录')
+    } else if (status === 403) {
+      ElMessage.error('没有权限访问')
+    } else if (status === 500) {
+      ElMessage.error('服务器内部错误')
     } else {
       ElMessage.error(error.message || '网络异常')
     }
     return Promise.reject(error)
   },
 )
+
+// ---------------------------------------------------------------------------
+// Public request helpers
+// ---------------------------------------------------------------------------
 
 export function get<T>(url: string, params?: object, config?: AxiosRequestConfig): Promise<T> {
   return service.get(url, { params, ...config }) as Promise<T>
@@ -73,4 +130,5 @@ export function download(url: string, params?: object) {
   setTimeout(() => document.body.removeChild(iframe), 5000)
 }
 
+export { service }
 export default service

@@ -11,12 +11,13 @@ from app.schemas.test_case import (
     TestCaseOut,
     TestCaseUpdate,
 )
-from app.services.test_case_agent import generate_test_cases
+from app.agents.test_case.service import generate_test_cases
+from app.core.response import success, fail, paginated
 
 router = APIRouter()
 
 
-@router.get("/", response_model=list[TestCaseOut])
+@router.get("/")
 def read_test_cases(
     project_id: int | None = None,
     module_id: int | None = None,
@@ -24,36 +25,42 @@ def read_test_cases(
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
-    return test_case_crud.get_multi_by_scope(
+    items = test_case_crud.get_multi_by_scope(
         db, project_id=project_id, module_id=module_id, skip=skip, limit=limit
     )
+    data = [TestCaseOut.model_validate(i).model_dump() for i in items]
+    page = skip // limit + 1 if limit > 0 else 1
+    return paginated(items=data, total=len(data), page=page, page_size=limit)
 
 
-@router.post("/", response_model=TestCaseOut)
+@router.post("/")
 def create_test_case(test_case_in: TestCaseCreate, db: Session = Depends(get_db)):
-    return test_case_crud.create(db, obj_in=test_case_in)
+    obj = test_case_crud.create(db, obj_in=test_case_in)
+    return success(data=TestCaseOut.model_validate(obj).model_dump())
 
 
-@router.post("/generate", response_model=TestCaseGenerateResponse)
+@router.post("/generate")
 def generate_cases(payload: TestCaseGenerateRequest):
     cases, elapsed_ms = generate_test_cases(payload)
-    return TestCaseGenerateResponse(cases=cases, elapsed_ms=elapsed_ms)
+    result = TestCaseGenerateResponse(cases=cases, elapsed_ms=elapsed_ms)
+    return success(data=result.model_dump())
 
 
-@router.post("/apply", response_model=list[TestCaseOut])
+@router.post("/apply")
 def apply_cases(payload: TestCaseApplyRequest, db: Session = Depends(get_db)):
-    return [test_case_crud.create(db, obj_in=item) for item in payload.cases]
+    items = [test_case_crud.create(db, obj_in=item) for item in payload.cases]
+    return success(data=[TestCaseOut.model_validate(i).model_dump() for i in items])
 
 
-@router.get("/{test_case_id}", response_model=TestCaseOut)
+@router.get("/{test_case_id}")
 def read_test_case(test_case_id: int, db: Session = Depends(get_db)):
     item = test_case_crud.get(db, test_case_id)
     if not item:
-        raise HTTPException(status_code=404, detail="Test case not found")
-    return item
+        return fail(message="Test case not found", code=404)
+    return success(data=TestCaseOut.model_validate(item).model_dump())
 
 
-@router.put("/{test_case_id}", response_model=TestCaseOut)
+@router.put("/{test_case_id}")
 def update_test_case(
     test_case_id: int,
     test_case_in: TestCaseUpdate,
@@ -61,13 +68,16 @@ def update_test_case(
 ):
     item = test_case_crud.get(db, test_case_id)
     if not item:
-        raise HTTPException(status_code=404, detail="Test case not found")
-    return test_case_crud.update(db, db_obj=item, obj_in=test_case_in)
+        return fail(message="Test case not found", code=404)
+    updated = test_case_crud.update(db, db_obj=item, obj_in=test_case_in)
+    return success(data=TestCaseOut.model_validate(updated).model_dump())
 
 
-@router.delete("/{test_case_id}", response_model=TestCaseOut)
+@router.delete("/{test_case_id}")
 def delete_test_case(test_case_id: int, db: Session = Depends(get_db)):
     item = test_case_crud.get(db, test_case_id)
     if not item:
-        raise HTTPException(status_code=404, detail="Test case not found")
-    return test_case_crud.remove(db, id=test_case_id)
+        return fail(message="Test case not found", code=404)
+    removed = test_case_crud.remove(db, id=test_case_id)
+    return success(data=TestCaseOut.model_validate(removed).model_dump())
+

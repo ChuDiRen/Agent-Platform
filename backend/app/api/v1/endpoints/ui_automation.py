@@ -11,11 +11,12 @@ from app.schemas.ui_automation import (
     UiTestExecOut,
     UiTestExecRunRequest,
 )
-from app.services.ui_automation_agent import (
+from app.agents.ui_automation.service import (
     build_ui_execution_details,
     get_ui_automation_case,
     list_ui_automation_cases,
 )
+from app.core.response import success, fail, paginated
 
 router = APIRouter()
 
@@ -38,7 +39,7 @@ def _exec_to_out(item) -> UiTestExecOut:
     )
 
 
-@router.get("/cases", response_model=list[UiAutomationCase])
+@router.get("/cases")
 def read_ui_automation_cases(
     project_id: int | None = None,
     name: str | None = None,
@@ -46,27 +47,31 @@ def read_ui_automation_cases(
     module_id: int | None = None,
     exec_type: str | None = None,
 ):
-    return list_ui_automation_cases(project_id=project_id, name=name, priority=priority, module_id=module_id, exec_type=exec_type)
+    items = list_ui_automation_cases(project_id=project_id, name=name, priority=priority, module_id=module_id, exec_type=exec_type)
+    return success(data=[UiAutomationCase.model_validate(i).model_dump() for i in items])
 
 
-@router.get("/cases/{case_id}", response_model=UiAutomationCase)
+@router.get("/cases/{case_id}")
 def read_ui_automation_case(case_id: int):
     item = get_ui_automation_case(case_id)
     if not item:
-        raise HTTPException(status_code=404, detail="UI automation case not found")
-    return item
+        return fail(message="UI automation case not found", code=404)
+    return success(data=UiAutomationCase.model_validate(item).model_dump())
 
 
-@router.get("/execs", response_model=list[UiTestExecOut])
+@router.get("/execs")
 def read_ui_automation_execs(project_id: int | None = None, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return [_exec_to_out(item) for item in exec_crud.get_multi_by_project(db, project_id=project_id, skip=skip, limit=limit)]
+    items = exec_crud.get_multi_by_project(db, project_id=project_id, skip=skip, limit=limit)
+    data = [_exec_to_out(i).model_dump() for i in items]
+    page = skip // limit + 1 if limit > 0 else 1
+    return paginated(items=data, total=len(data), page=page, page_size=limit)
 
 
-@router.post("/execs", response_model=UiTestExecOut)
+@router.post("/execs")
 def create_ui_automation_exec(payload: UiTestExecRunRequest, db: Session = Depends(get_db)):
     missing = [case_id for case_id in payload.case_ids if not get_ui_automation_case(case_id)]
     if missing:
-        raise HTTPException(status_code=404, detail=f"UI automation case not found: {missing[0]}")
+        return fail(message=f"UI automation case not found: {missing[0]}", code=404)
     details = build_ui_execution_details(case_ids=payload.case_ids, exec_param=payload.exec_param)
     created = exec_crud.create(
         db,
@@ -81,22 +86,22 @@ def create_ui_automation_exec(payload: UiTestExecRunRequest, db: Session = Depen
             exec_status="已完成",
         ),
     )
-    return _exec_to_out(created)
+    return success(data=_exec_to_out(created).model_dump())
 
 
-@router.get("/execs/{exec_id}", response_model=UiTestExecOut)
+@router.get("/execs/{exec_id}")
 def read_ui_automation_exec(exec_id: int, db: Session = Depends(get_db)):
     item = exec_crud.get(db, exec_id)
     if not item:
-        raise HTTPException(status_code=404, detail="UI automation execution not found")
-    return _exec_to_out(item)
+        return fail(message="UI automation execution not found", code=404)
+    return success(data=_exec_to_out(item).model_dump())
 
 
-@router.post("/execs/{exec_id}/copy", response_model=UiTestExecOut)
+@router.post("/execs/{exec_id}/copy")
 def copy_ui_automation_exec(exec_id: int, db: Session = Depends(get_db)):
     item = exec_crud.get(db, exec_id)
     if not item:
-        raise HTTPException(status_code=404, detail="UI automation execution not found")
+        return fail(message="UI automation execution not found", code=404)
     copied = exec_crud.create(
         db,
         obj_in=UiTestExecCreate(
@@ -110,12 +115,14 @@ def copy_ui_automation_exec(exec_id: int, db: Session = Depends(get_db)):
             exec_status="已完成",
         ),
     )
-    return _exec_to_out(copied)
+    return success(data=_exec_to_out(copied).model_dump())
 
 
-@router.delete("/execs/{exec_id}", response_model=UiTestExecOut)
+@router.delete("/execs/{exec_id}")
 def delete_ui_automation_exec(exec_id: int, db: Session = Depends(get_db)):
     item = exec_crud.get(db, exec_id)
     if not item:
-        raise HTTPException(status_code=404, detail="UI automation execution not found")
-    return _exec_to_out(exec_crud.remove(db, id=exec_id))
+        return fail(message="UI automation execution not found", code=404)
+    removed = exec_crud.remove(db, id=exec_id)
+    return success(data=_exec_to_out(removed).model_dump())
+

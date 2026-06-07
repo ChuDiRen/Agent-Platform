@@ -12,7 +12,8 @@ from app.schemas.performance import (
     PerformanceCreate,
     PerformanceOut,
 )
-from app.services.performance_agent import analyze_performance
+from app.agents.performance.service import analyze_performance
+from app.core.response import success, fail, paginated
 
 router = APIRouter()
 
@@ -29,20 +30,20 @@ def _performance_to_out(item) -> PerformanceOut:
     )
 
 
-@router.get("/", response_model=list[PerformanceOut])
+@router.get("/")
 def read_performance_records(
     project_id: int | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
-    return [
-        _performance_to_out(item)
-        for item in performance_crud.get_multi_by_project(db, project_id=project_id, skip=skip, limit=limit)
-    ]
+    items = performance_crud.get_multi_by_project(db, project_id=project_id, skip=skip, limit=limit)
+    data = [_performance_to_out(i).model_dump() for i in items]
+    page = skip // limit + 1 if limit > 0 else 1
+    return paginated(items=data, total=len(data), page=page, page_size=limit)
 
 
-@router.post("/analyze", response_model=PerformanceAnalyzeResponse)
+@router.post("/analyze")
 def analyze_performance_record(payload: PerformanceAnalyzeRequest, db: Session = Depends(get_db)):
     metrics, analysis, elapsed_ms = analyze_performance(payload)
     record = performance_crud.create(
@@ -59,21 +60,23 @@ def analyze_performance_record(payload: PerformanceAnalyzeRequest, db: Session =
             ),
         ),
     )
-    return PerformanceAnalyzeResponse(record=_performance_to_out(record), analysis=analysis, elapsed_ms=elapsed_ms)
+    result = PerformanceAnalyzeResponse(record=_performance_to_out(record), analysis=analysis, elapsed_ms=elapsed_ms)
+    return success(data=result.model_dump())
 
 
-@router.get("/{record_id}", response_model=PerformanceOut)
+@router.get("/{record_id}")
 def read_performance_record(record_id: int, db: Session = Depends(get_db)):
     item = performance_crud.get(db, record_id)
     if not item:
-        raise HTTPException(status_code=404, detail="Performance record not found")
-    return _performance_to_out(item)
+        return fail(message="Performance record not found", code=404)
+    return success(data=_performance_to_out(item).model_dump())
 
 
-@router.delete("/{record_id}", response_model=PerformanceOut)
+@router.delete("/{record_id}")
 def delete_performance_record(record_id: int, db: Session = Depends(get_db)):
     item = performance_crud.get(db, record_id)
     if not item:
-        raise HTTPException(status_code=404, detail="Performance record not found")
+        return fail(message="Performance record not found", code=404)
     removed = performance_crud.remove(db, id=record_id)
-    return _performance_to_out(removed)
+    return success(data=_performance_to_out(removed).model_dump())
+

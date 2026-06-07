@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -12,7 +12,9 @@ from app.schemas.api_document import (
     ApiDocumentOut,
     ApiDocumentUpdate,
 )
-from app.services.api_document_analysis import analyze_api_document
+from app.agents.api_document.service import analyze_api_document
+from app.core.response import success, fail, paginated
+from app.utils.file_parser import extract_text, SUPPORTED_EXTENSIONS
 
 router = APIRouter()
 
@@ -34,7 +36,7 @@ def _api_document_to_out(document) -> ApiDocumentOut:
     return ApiDocumentOut.model_validate(data)
 
 
-@router.get("/", response_model=list[ApiDocumentOut])
+@router.get("/")
 def read_api_documents(
     project_id: int | None = None,
     skip: int = 0,
@@ -42,24 +44,60 @@ def read_api_documents(
     db: Session = Depends(get_db),
 ):
     documents = api_document_crud.get_multi_by_project(db, project_id=project_id, skip=skip, limit=limit)
-    return [_api_document_to_out(document) for document in documents]
+    items = [_api_document_to_out(d).model_dump() for d in documents]
+    page = skip // limit + 1 if limit > 0 else 1
+    return paginated(items=items, total=len(items), page=page, page_size=limit)
 
 
-@router.post("/", response_model=ApiDocumentOut)
+@router.post("/")
 def create_api_document(document_in: ApiDocumentCreate, db: Session = Depends(get_db)):
     document = api_document_crud.create(db, obj_in=document_in)
-    return _api_document_to_out(document)
+    return success(data=_api_document_to_out(document).model_dump())
 
 
-@router.get("/{document_id}", response_model=ApiDocumentOut)
+@router.post("/upload")
+async def upload_api_document(
+    file: UploadFile = File(...),
+    project_id: int = Form(1),
+    parent_id: int | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    """上传文件并解析为接口文档内容。
+
+    支持格式: .txt, .md, .json, .xml, .csv, .html, .doc, .docx, .pdf
+    """
+    raw = await file.read()
+    if not raw:
+        return fail(message="文件内容为空", code=400)
+
+    try:
+        content = extract_text(file.filename or "unknown.txt", raw)
+    except ValueError as exc:
+        return fail(message=str(exc), code=400)
+
+    name = file.filename.rsplit(".", 1)[0] if file.filename and "." in file.filename else (file.filename or "未命名文档")
+
+    doc_in = ApiDocumentCreate(
+        project_id=project_id,
+        parent_id=parent_id,
+        name=name,
+        title=name,
+        content=content,
+        is_directory=False,
+    )
+    document = api_document_crud.create(db, obj_in=doc_in)
+    return success(data=_api_document_to_out(document).model_dump())
+
+
+@router.get("/{document_id}")
 def read_api_document(document_id: int, db: Session = Depends(get_db)):
     document = api_document_crud.get(db, document_id)
     if not document:
-        raise HTTPException(status_code=404, detail="API document not found")
-    return _api_document_to_out(document)
+        return fail(message="API document not found", code=404)
+    return success(data=_api_document_to_out(document).model_dump())
 
 
-@router.put("/{document_id}", response_model=ApiDocumentOut)
+@router.put("/{document_id}")
 def update_api_document(
     document_id: int,
     document_in: ApiDocumentUpdate,
@@ -67,20 +105,21 @@ def update_api_document(
 ):
     document = api_document_crud.get(db, document_id)
     if not document:
-        raise HTTPException(status_code=404, detail="API document not found")
+        return fail(message="API document not found", code=404)
     updated = api_document_crud.update(db, db_obj=document, obj_in=document_in)
-    return _api_document_to_out(updated)
+    return success(data=_api_document_to_out(updated).model_dump())
 
 
-@router.delete("/{document_id}", response_model=ApiDocumentOut)
+@router.delete("/{document_id}")
 def delete_api_document(document_id: int, db: Session = Depends(get_db)):
     document = api_document_crud.get(db, document_id)
     if not document:
-        raise HTTPException(status_code=404, detail="API document not found")
+        return fail(message="API document not found", code=404)
     removed = api_document_crud.remove(db, id=document_id)
-    return _api_document_to_out(removed)
+    return success(data=_api_document_to_out(removed).model_dump())
 
 
-@router.post("/analysis", response_model=ApiDocumentAnalysisResponse)
+@router.post("/analysis")
 def analyze_document(payload: ApiDocumentAnalysisRequest):
-    return analyze_api_document(payload)
+    result = analyze_api_document(payload)
+    return success(data=result.model_dump())

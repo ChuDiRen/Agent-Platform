@@ -55,3 +55,6 @@ alembic/versions/*.pyc
 
 # Augment RAG
 .augment-rag/
+
+# 启停脚本运行时
+.runtime/

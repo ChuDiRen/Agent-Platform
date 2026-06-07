@@ -4,55 +4,61 @@ from app.api.deps import get_db
 from app.crud.user import user as user_crud
 from app.schemas.user import User, UserCreate, UserUpdate, LoginRequest, LoginResponse
 from app.core.security import create_access_token
+from app.core.response import success, fail
 
 router = APIRouter()
 
 
-@router.post("/", response_model=User)
+@router.post("/")
 def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
     existing = user_crud.get_by_email(db, email=user_in.email)
     if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return user_crud.create(db, obj_in=user_in)
+        return fail(message="Email already registered", code=400)
+    obj = user_crud.create(db, obj_in=user_in)
+    return success(data=User.model_validate(obj).model_dump())
 
 
-@router.get("/{user_id}", response_model=User)
+@router.get("/{user_id}")
 def read_user(user_id: int, db: Session = Depends(get_db)):
     user = user_crud.get(db, user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+        return fail(message="User not found", code=404)
+    return success(data=User.model_validate(user).model_dump())
 
 
-@router.get("/", response_model=list[User])
+@router.get("/")
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return user_crud.get_multi(db, skip=skip, limit=limit)
+    items = user_crud.get_multi(db, skip=skip, limit=limit)
+    return success(data=[User.model_validate(u).model_dump() for u in items])
 
 
-@router.put("/{user_id}", response_model=User)
+@router.put("/{user_id}")
 def update_user(user_id: int, user_in: UserUpdate, db: Session = Depends(get_db)):
     user = user_crud.get(db, user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        return fail(message="User not found", code=404)
     if user_in.email and user_in.email != user.email:
         existing = user_crud.get_by_email(db, email=user_in.email)
         if existing:
-            raise HTTPException(status_code=400, detail="Email already registered")
-    return user_crud.update(db, db_obj=user, obj_in=user_in)
+            return fail(message="Email already registered", code=400)
+    updated = user_crud.update(db, db_obj=user, obj_in=user_in)
+    return success(data=User.model_validate(updated).model_dump())
 
 
-@router.delete("/{user_id}", response_model=User)
+@router.delete("/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     user = user_crud.get(db, user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user_crud.remove(db, id=user_id)
+        return fail(message="User not found", code=404)
+    removed = user_crud.remove(db, id=user_id)
+    return success(data=User.model_validate(removed).model_dump())
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login")
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     user = user_crud.authenticate(db, email=login_data.email, password=login_data.password)
     if not user:
-        raise HTTPException(status_code=401, detail="邮箱或密码错误")
+        return fail(message="邮箱或密码错误", code=401)
     token = create_access_token(subject=str(user.id))
-    return LoginResponse(access_token=token, token_type="bearer", user=user)
+    result = LoginResponse(access_token=token, token_type="bearer", user=user)
+    return success(data=result.model_dump())

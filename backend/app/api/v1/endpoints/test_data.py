@@ -13,7 +13,8 @@ from app.schemas.test_data import (
     TestDataTemplateOut,
     TestDataTemplateUpdate,
 )
-from app.services.test_data_agent import generate_test_data_response
+from app.agents.test_data.service import generate_test_data_response
+from app.core.response import success, fail, paginated
 
 router = APIRouter()
 
@@ -35,12 +36,13 @@ def _template_to_out(template) -> TestDataTemplateOut:
     return TestDataTemplateOut.model_validate(data)
 
 
-@router.post("/generate", response_model=TestDataGenerateResponse)
+@router.post("/generate")
 def generate_test_data(payload: TestDataGenerateRequest):
-    return generate_test_data_response(payload)
+    result = generate_test_data_response(payload)
+    return success(data=result.model_dump())
 
 
-@router.get("/templates/", response_model=list[TestDataTemplateOut])
+@router.get("/templates/")
 def read_templates(
     project_id: int | None = None,
     skip: int = 0,
@@ -50,24 +52,26 @@ def read_templates(
     templates = template_crud.get_multi_by_project(
         db, project_id=project_id, skip=skip, limit=limit
     )
-    return [_template_to_out(template) for template in templates]
+    items = [_template_to_out(t).model_dump() for t in templates]
+    page = skip // limit + 1 if limit > 0 else 1
+    return paginated(items=items, total=len(items), page=page, page_size=limit)
 
 
-@router.post("/templates/", response_model=TestDataTemplateOut)
+@router.post("/templates/")
 def create_template(template_in: TestDataTemplateCreate, db: Session = Depends(get_db)):
     template = template_crud.create(db, obj_in=template_in)
-    return _template_to_out(template)
+    return success(data=_template_to_out(template).model_dump())
 
 
-@router.get("/templates/{template_id}", response_model=TestDataTemplateOut)
+@router.get("/templates/{template_id}")
 def read_template(template_id: int, db: Session = Depends(get_db)):
     template = template_crud.get(db, template_id)
     if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
-    return _template_to_out(template)
+        return fail(message="Template not found", code=404)
+    return success(data=_template_to_out(template).model_dump())
 
 
-@router.put("/templates/{template_id}", response_model=TestDataTemplateOut)
+@router.put("/templates/{template_id}")
 def update_template(
     template_id: int,
     template_in: TestDataTemplateUpdate,
@@ -75,15 +79,16 @@ def update_template(
 ):
     template = template_crud.get(db, template_id)
     if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
+        return fail(message="Template not found", code=404)
     updated = template_crud.update(db, db_obj=template, obj_in=template_in)
-    return _template_to_out(updated)
+    return success(data=_template_to_out(updated).model_dump())
 
 
-@router.delete("/templates/{template_id}", response_model=TestDataTemplateOut)
+@router.delete("/templates/{template_id}")
 def delete_template(template_id: int, db: Session = Depends(get_db)):
     template = template_crud.get(db, template_id)
     if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
+        return fail(message="Template not found", code=404)
     removed = template_crud.remove(db, id=template_id)
-    return _template_to_out(removed)
+    return success(data=_template_to_out(removed).model_dump())
+
