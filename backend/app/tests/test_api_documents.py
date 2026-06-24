@@ -1,4 +1,4 @@
-def test_create_api_document_and_analyze(client):
+def test_create_api_document_and_analyze(client, response_data):
     parent_response = client.post(
         "/api/v1/api-documents/",
         json={
@@ -9,7 +9,7 @@ def test_create_api_document_and_analyze(client):
         },
     )
     assert parent_response.status_code == 200
-    parent = parent_response.json()
+    parent = response_data(parent_response)
 
     document_response = client.post(
         "/api/v1/api-documents/",
@@ -23,7 +23,7 @@ def test_create_api_document_and_analyze(client):
         },
     )
     assert document_response.status_code == 200
-    document = document_response.json()
+    document = response_data(document_response)
     assert document["parent_id"] == parent["id"]
 
     analysis_response = client.post(
@@ -35,13 +35,21 @@ def test_create_api_document_and_analyze(client):
         },
     )
     assert analysis_response.status_code == 200
-    findings = analysis_response.json()["findings"]
-    assert findings
-    assert any(item["id"] == "missing-response-params" for item in findings)
+    task = response_data(analysis_response)
+    assert task["agent_key"] == "api_document"
+    assert task["status"] == "queued"
 
     update_response = client.put(
         f"/api/v1/api-documents/{document['id']}",
-        json={"ai_suggest": findings},
+        json={
+            "ai_suggest": [
+                {
+                    "id": "missing-response-params",
+                    "title": "补充响应参数",
+                    "description": "响应参数缺少字段说明",
+                }
+            ]
+        },
     )
     assert update_response.status_code == 200
-    assert update_response.json()["ai_suggest"][0]["title"]
+    assert response_data(update_response)["ai_suggest"][0]["title"]

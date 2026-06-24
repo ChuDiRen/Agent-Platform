@@ -1,4 +1,6 @@
 import { del, get, post, put } from './http'
+import type { AgentTask } from './agentTask'
+import { getPageItems, type PaginatedData } from './pagination'
 
 export type TestDataFieldType = 'number' | 'string' | 'email' | 'phone' | 'date' | 'boolean'
 export type TestDataFormat = 'json' | 'csv'
@@ -41,12 +43,15 @@ export interface TestDataTemplatePayload extends TestDataGenerateRequest {
   description?: string | null
 }
 
-export function generateTestData(data: TestDataGenerateRequest): Promise<TestDataGenerateResponse> {
-  return post<TestDataGenerateResponse>('/api/v1/test-data/generate', data)
+export function generateTestData(data: TestDataGenerateRequest): Promise<AgentTask<TestDataGenerateResponse>> {
+  return post<AgentTask<TestDataGenerateResponse>>('/api/v1/test-data/generate', data)
 }
 
 export function getTestDataTemplates(projectId?: number): Promise<TestDataTemplate[]> {
-  return get<TestDataTemplate[]>('/api/v1/test-data/templates/', projectId ? { project_id: projectId } : undefined)
+  return get<PaginatedData<TestDataTemplate>>(
+    '/api/v1/test-data/templates/',
+    projectId ? { project_id: projectId } : undefined,
+  ).then(getPageItems)
 }
 
 export function createTestDataTemplate(data: TestDataTemplatePayload): Promise<TestDataTemplate> {

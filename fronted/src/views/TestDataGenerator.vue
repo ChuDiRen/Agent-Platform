@@ -2,9 +2,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { useAgentTaskRunner } from '@/composables/useAgentTaskRunner'
 import {
   createTestDataTemplate,
-  generateTestData,
   getTestDataTemplates,
   type TestDataField,
   type TestDataFieldType,
@@ -25,6 +25,13 @@ const saving = ref(false)
 const templates = ref<TestDataTemplate[]>([])
 const selectedTemplateId = ref<number | null>(null)
 const result = ref<TestDataGenerateResponse | null>(null)
+const taskRunner = useAgentTaskRunner<TestDataGenerateResponse>('test_data')
+taskRunner.onFinished((task) => {
+  if (task.status === 'succeeded' && task.result_payload?.output) {
+    result.value = task.result_payload.output
+    ElMessage.success(`生成成功，耗时${result.value.elapsed_ms}ms`)
+  }
+})
 const fields = ref<TestDataField[]>([
   { name: 'id', type: 'number', rule: '从1开始递增' },
   { name: 'username', type: 'string', rule: '用户名' },
@@ -73,10 +80,15 @@ async function runGenerate() {
 
   loading.value = true
   try {
-    result.value = await generateTestData(payload)
-    ElMessage.success(`生成成功，耗时${result.value.elapsed_ms}ms`)
+    await taskRunner.run(payload as unknown as Record<string, unknown>)
+    if (taskRunner.result.value) {
+      result.value = taskRunner.result.value
+      ElMessage.success(`生成成功，耗时${result.value.elapsed_ms}ms`)
+    } else {
+      ElMessage.success('任务已提交，正在后台执行')
+    }
   } finally {
-    loading.value = false
+    loading.value = taskRunner.loading.value
   }
 }
 

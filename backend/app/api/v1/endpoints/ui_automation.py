@@ -12,11 +12,12 @@ from app.schemas.ui_automation import (
     UiTestExecRunRequest,
 )
 from app.agents.ui_automation.service import (
-    build_ui_execution_details,
     get_ui_automation_case,
     list_ui_automation_cases,
 )
 from app.core.response import success, fail, paginated
+from app.schemas.agent_task import AgentTaskOut
+from app.services.agent_task_enqueue import create_and_enqueue_agent_task
 
 router = APIRouter()
 
@@ -72,21 +73,13 @@ def create_ui_automation_exec(payload: UiTestExecRunRequest, db: Session = Depen
     missing = [case_id for case_id in payload.case_ids if not get_ui_automation_case(case_id)]
     if missing:
         return fail(message=f"UI automation case not found: {missing[0]}", code=404)
-    details = build_ui_execution_details(case_ids=payload.case_ids, exec_param=payload.exec_param)
-    created = exec_crud.create(
+    task = create_and_enqueue_agent_task(
         db,
-        obj_in=UiTestExecCreate(
-            project_id=payload.project_id,
-            name=payload.name,
-            exec_type=payload.exec_type,
-            case_ids=payload.case_ids,
-            details=details,
-            desc=payload.desc,
-            exec_param=payload.exec_param,
-            exec_status="已完成",
-        ),
+        agent_key="ui_automation",
+        project_id=payload.project_id,
+        input_payload=payload.model_dump(),
     )
-    return success(data=_exec_to_out(created).model_dump())
+    return success(data=AgentTaskOut.model_validate(task).model_dump(mode="json"))
 
 
 @router.get("/execs/{exec_id}")

@@ -2,12 +2,14 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { useAgentTaskRunner } from '@/composables/useAgentTaskRunner'
 import {
   createDocument,
   deleteDocument,
   getDocuments,
   reviewRequirement,
   updateDocument,
+  type RequirementReviewResponse,
   type RequirementDocument,
   type RequirementFinding,
 } from '@/api/document'
@@ -23,6 +25,18 @@ const reviewing = ref(false)
 const extraPrompt = ref('')
 const findings = ref<RequirementFinding[]>([])
 const expandedFinding = ref<string | null>(null)
+const taskRunner = useAgentTaskRunner<RequirementReviewResponse>('requirement_review')
+taskRunner.onFinished((task) => {
+  const response = task.result_payload?.output
+  if (task.status === 'succeeded' && response?.findings) {
+    findings.value = response.findings
+    expandedFinding.value = findings.value[1]?.id || findings.value[0]?.id || null
+    reviewing.value = false
+  }
+  if (task.status === 'failed') {
+    reviewing.value = false
+  }
+})
 
 const selectedDocument = computed(() => documents.value.find((item) => item.id === selectedId.value) || null)
 const roots = computed(() => documents.value.filter((item) => !item.parent_id))
@@ -133,16 +147,21 @@ async function runReview() {
   reviewVisible.value = true
   reviewing.value = true
   try {
-    const response = await reviewRequirement({
+    await taskRunner.run({
       document_id: selectedDocument.value.id,
       title: selectedDocument.value.title,
       content: editorContent.value,
       extra_prompt: extraPrompt.value,
     })
-    findings.value = response.findings
-    expandedFinding.value = findings.value[1]?.id || findings.value[0]?.id || null
+    const response = taskRunner.result.value
+    if (response?.findings) {
+      findings.value = response.findings
+      expandedFinding.value = findings.value[1]?.id || findings.value[0]?.id || null
+    } else {
+      ElMessage.success('任务已提交，正在后台执行')
+    }
   } finally {
-    reviewing.value = false
+    reviewing.value = taskRunner.loading.value
   }
 }
 

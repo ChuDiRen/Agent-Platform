@@ -36,6 +36,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '大熊AI智能体' },
   },
   {
+    path: '/agent-tasks',
+    name: 'AgentTasks',
+    component: () => import('@/views/AgentTasks.vue'),
+    meta: { title: 'Agent任务中心' },
+  },
+  {
     path: '/test-data-generator',
     name: 'TestDataGenerator',
     component: () => import('@/views/TestDataGenerator.vue'),

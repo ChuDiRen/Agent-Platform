@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 from app.core.config import settings
 from app.core.security import get_password_hash
+from app.db.base import Base
 from app.db.session import SessionLocal
 from app.models.user import User
 from app.models.agent import Agent
@@ -18,6 +19,7 @@ from app.api.v1.endpoints import (
     api_automation,
     ui_automation,
     performance,
+    agent_tasks,
 )
 
 app = FastAPI(
@@ -46,6 +48,7 @@ app.include_router(api_documents.router, prefix=f"{settings.API_V1_PREFIX}/api-d
 app.include_router(api_automation.router, prefix=f"{settings.API_V1_PREFIX}/api-automation", tags=["api-automation"])
 app.include_router(ui_automation.router, prefix=f"{settings.API_V1_PREFIX}/ui-automation", tags=["ui-automation"])
 app.include_router(performance.router, prefix=f"{settings.API_V1_PREFIX}/performance", tags=["performance"])
+app.include_router(agent_tasks.router, prefix=f"{settings.API_V1_PREFIX}/agent-tasks", tags=["agent-tasks"])
 
 
 SEED_AGENTS = [
@@ -130,6 +133,7 @@ def seed_defaults():
     """启动时自动创建默认管理员和智能体数据（如不存在）。"""
     db = SessionLocal()
     try:
+        Base.metadata.create_all(bind=db.get_bind())
         # Seed admin
         if not db.query(User).filter(User.email == "admin@qq.com").first():
             db.add(User(

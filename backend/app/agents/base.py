@@ -9,15 +9,16 @@ from langchain.chat_models import init_chat_model
 from deepagents import create_deep_agent, FilesystemPermission
 from deepagents.backends import StateBackend
 from langchain.agents.middleware.types import AgentMiddleware
+from app.core.config import settings
 
 
 class BaseAgent(ABC):
     """智能体基类。"""
 
     SYSTEM_PROMPT: str = ""
-    MODEL_SPEC: str = "openai:mimo-v2.5-pro"
-    MODEL_BASE_URL: str = "https://sub2api-plus.zeabur.app/v1"
-    MODEL_API_KEY: str = "sk-12344488b2ff7e6d0e8239885568007b688ca9478d161c02ad9f82062e0369a8"
+    MODEL_SPEC: str = settings.AGENT_MODEL_SPEC
+    MODEL_BASE_URL: str = settings.AGENT_MODEL_BASE_URL
+    MODEL_API_KEY: str = settings.AGENT_MODEL_API_KEY
 
     # 自动压缩开关
     ENABLE_SUMMARIZATION: bool = True

@@ -38,7 +38,7 @@ export default ({ mode }: any) => {
       port: 3000,
       open: true,
       proxy: {
-        '/api': {
+        '/api/': {
           target: proxyTarget,
           changeOrigin: true,
         },

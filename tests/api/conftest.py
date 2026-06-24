@@ -152,6 +152,12 @@ def client(SessionLocal) -> Generator[TestClient, None, None]:
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(autouse=True)
+def disable_agent_task_delivery(monkeypatch):
+    """API tests verify HTTP/database contracts without requiring Redis/Celery."""
+    monkeypatch.setattr("app.services.agent_task_enqueue.run_agent_task.delay", lambda task_id: None)
+
+
 # ============================================================
 # API 操作 Fixtures
 # ============================================================

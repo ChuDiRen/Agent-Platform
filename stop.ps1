@@ -39,7 +39,12 @@ function Stop-DevService {
         [Parameter(Mandatory = $true)][string]$PidFile
     )
 
-    Write-Host "停止 $Name 服务 (端口 $Port)..." -ForegroundColor Yellow
+    if ($Port -gt 0) {
+        Write-Host "停止 $Name 服务 (端口 $Port)..." -ForegroundColor Yellow
+    }
+    else {
+        Write-Host "停止 $Name 服务..." -ForegroundColor Yellow
+    }
 
     $stopped = $false
     if (Test-Path $PidFile) {
@@ -50,7 +55,7 @@ function Stop-DevService {
         Remove-Item -Path $PidFile -Force -ErrorAction SilentlyContinue
     }
 
-    if (Stop-PortOccupants -Port $Port) {
+    if ($Port -gt 0 -and (Stop-PortOccupants -Port $Port)) {
         $stopped = $true
     }
 
@@ -71,6 +76,20 @@ Stop-DevService `
     -Name "后端" `
     -Port 8000 `
     -PidFile (Join-Path $StateDir "backend.pid")
+
+Write-Host ""
+
+Stop-DevService `
+    -Name "Celery Worker" `
+    -Port 0 `
+    -PidFile (Join-Path $StateDir "worker.pid")
+
+Write-Host ""
+
+Stop-DevService `
+    -Name "Redis" `
+    -Port 6379 `
+    -PidFile (Join-Path $StateDir "redis.pid")
 
 Write-Host ""
 

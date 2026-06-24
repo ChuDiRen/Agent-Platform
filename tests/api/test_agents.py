@@ -31,7 +31,7 @@ class TestAgentCreate:
     def test_create_agent_success(self, client):
         resp = client.post(AGENT_BASE, json=_make_agent())
         assert resp.status_code == 200
-        body = resp.json()
+        body = resp.json()["data"]
         assert body["name"] == "测试智能体"
         assert body["id"] > 0
 
@@ -40,7 +40,7 @@ class TestAgentCreate:
             name="占位智能体", is_placeholder=True, tags="[]"
         ))
         assert resp.status_code == 200
-        assert resp.json()["is_placeholder"] is True
+        assert resp.json()["data"]["is_placeholder"] is True
 
     def test_create_agent_missing_name(self, client):
         data = _make_agent()
@@ -56,25 +56,25 @@ class TestAgentRead:
     def test_list_agents_empty(self, client):
         resp = client.get(AGENT_BASE)
         assert resp.status_code == 200
-        assert resp.json() == []
+        assert resp.json()["data"] == []
 
     def test_list_agents_after_create(self, client):
         client.post(AGENT_BASE, json=_make_agent(name="A", sort_order=1))
         client.post(AGENT_BASE, json=_make_agent(name="B", sort_order=2))
         resp = client.get(AGENT_BASE)
         assert resp.status_code == 200
-        assert len(resp.json()) == 2
+        assert len(resp.json()["data"]) == 2
 
     def test_get_agent_by_id(self, client):
         create_resp = client.post(AGENT_BASE, json=_make_agent())
-        agent_id = create_resp.json()["id"]
+        agent_id = create_resp.json()["data"]["id"]
         resp = client.get(f"{AGENT_BASE}{agent_id}")
         assert resp.status_code == 200
-        assert resp.json()["id"] == agent_id
+        assert resp.json()["data"]["id"] == agent_id
 
     def test_get_agent_not_found(self, client):
         resp = client.get(f"{AGENT_BASE}99999")
-        assert resp.status_code == 404
+        assert resp.json()["code"] == 404
 
 
 class TestAgentUpdate:
@@ -82,22 +82,22 @@ class TestAgentUpdate:
 
     def test_update_agent_name(self, client):
         create_resp = client.post(AGENT_BASE, json=_make_agent())
-        agent_id = create_resp.json()["id"]
+        agent_id = create_resp.json()["data"]["id"]
         resp = client.put(f"{AGENT_BASE}{agent_id}", json={"name": "新名称"})
         assert resp.status_code == 200
-        assert resp.json()["name"] == "新名称"
+        assert resp.json()["data"]["name"] == "新名称"
 
     def test_update_agent_tags(self, client):
         create_resp = client.post(AGENT_BASE, json=_make_agent())
-        agent_id = create_resp.json()["id"]
+        agent_id = create_resp.json()["data"]["id"]
         new_tags = '["新标签"]'
         resp = client.put(f"{AGENT_BASE}{agent_id}", json={"tags": new_tags})
         assert resp.status_code == 200
-        assert resp.json()["tags"] == new_tags
+        assert resp.json()["data"]["tags"] == new_tags
 
     def test_update_agent_not_found(self, client):
         resp = client.put(f"{AGENT_BASE}99999", json={"name": "x"})
-        assert resp.status_code == 404
+        assert resp.json()["code"] == 404
 
 
 class TestAgentDelete:
@@ -105,15 +105,15 @@ class TestAgentDelete:
 
     def test_delete_agent(self, client):
         create_resp = client.post(AGENT_BASE, json=_make_agent())
-        agent_id = create_resp.json()["id"]
+        agent_id = create_resp.json()["data"]["id"]
         resp = client.delete(f"{AGENT_BASE}{agent_id}")
         assert resp.status_code == 200
         # verify gone
-        assert client.get(f"{AGENT_BASE}{agent_id}").status_code == 404
+        assert client.get(f"{AGENT_BASE}{agent_id}").json()["code"] == 404
 
     def test_delete_agent_not_found(self, client):
         resp = client.delete(f"{AGENT_BASE}99999")
-        assert resp.status_code == 404
+        assert resp.json()["code"] == 404
 
 
 class TestAgentSeedData:
@@ -139,22 +139,22 @@ class TestAgentSeedData:
         self._seed_all(client)
         resp = client.get(AGENT_BASE)
         assert resp.status_code == 200
-        assert len(resp.json()) == 9
+        assert len(resp.json()["data"]) == 9
 
     def test_seed_agent_names(self, client):
         self._seed_all(client)
-        names = [a["name"] for a in client.get(AGENT_BASE).json()]
+        names = [a["name"] for a in client.get(AGENT_BASE).json()["data"]]
         assert "AI需求评估助手" in names
         assert "更多智能体即将上线" in names
 
     def test_placeholder_agent_flag(self, client):
         self._seed_all(client)
-        placeholders = [a for a in client.get(AGENT_BASE).json() if a["is_placeholder"]]
+        placeholders = [a for a in client.get(AGENT_BASE).json()["data"] if a["is_placeholder"]]
         assert len(placeholders) == 1
         assert placeholders[0]["name"] == "更多智能体即将上线"
 
     def test_seed_agents_sorted(self, client):
         self._seed_all(client)
-        agents = client.get(AGENT_BASE).json()
+        agents = client.get(AGENT_BASE).json()["data"]
         orders = [a["sort_order"] for a in agents]
         assert orders == sorted(orders)

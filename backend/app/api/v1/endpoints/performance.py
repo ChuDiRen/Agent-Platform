@@ -7,13 +7,13 @@ from app.api.deps import get_db
 from app.crud.performance import performance as performance_crud
 from app.schemas.performance import (
     PerformanceAnalyzeRequest,
-    PerformanceAnalyzeResponse,
     PerformanceConfigs,
     PerformanceCreate,
     PerformanceOut,
 )
-from app.agents.performance.service import analyze_performance
 from app.core.response import success, fail, paginated
+from app.schemas.agent_task import AgentTaskOut
+from app.services.agent_task_enqueue import create_and_enqueue_agent_task
 
 router = APIRouter()
 
@@ -45,23 +45,13 @@ def read_performance_records(
 
 @router.post("/analyze")
 def analyze_performance_record(payload: PerformanceAnalyzeRequest, db: Session = Depends(get_db)):
-    metrics, analysis, elapsed_ms = analyze_performance(payload)
-    record = performance_crud.create(
+    task = create_and_enqueue_agent_task(
         db,
-        obj_in=PerformanceCreate(
-            project_id=payload.project_id,
-            configs=PerformanceConfigs(
-                name=payload.name,
-                source="ai-analysis",
-                scenario=payload.scenario,
-                raw_text=payload.raw_text,
-                metrics=metrics,
-                analysis=analysis,
-            ),
-        ),
+        agent_key="performance",
+        project_id=payload.project_id,
+        input_payload=payload.model_dump(),
     )
-    result = PerformanceAnalyzeResponse(record=_performance_to_out(record), analysis=analysis, elapsed_ms=elapsed_ms)
-    return success(data=result.model_dump())
+    return success(data=AgentTaskOut.model_validate(task).model_dump(mode="json"))
 
 
 @router.get("/{record_id}")

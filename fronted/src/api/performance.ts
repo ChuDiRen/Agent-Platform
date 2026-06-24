@@ -1,4 +1,6 @@
 import { del, get, post } from './http'
+import type { AgentTask } from './agentTask'
+import { getPageItems, type PaginatedData } from './pagination'
 
 export interface PerformanceMetric {
   name: string
@@ -52,12 +54,15 @@ export interface PerformanceAnalyzeResponse {
   elapsed_ms: number
 }
 
-export function analyzePerformance(data: PerformanceAnalyzeRequest): Promise<PerformanceAnalyzeResponse> {
-  return post<PerformanceAnalyzeResponse>('/api/v1/performance/analyze', data)
+export function analyzePerformance(data: PerformanceAnalyzeRequest): Promise<AgentTask<PerformanceAnalyzeResponse>> {
+  return post<AgentTask<PerformanceAnalyzeResponse>>('/api/v1/performance/analyze', data)
 }
 
 export function getPerformanceRecords(projectId?: number): Promise<PerformanceRecord[]> {
-  return get<PerformanceRecord[]>('/api/v1/performance/', projectId ? { project_id: projectId } : undefined)
+  return get<PaginatedData<PerformanceRecord>>(
+    '/api/v1/performance/',
+    projectId ? { project_id: projectId } : undefined,
+  ).then(getPageItems)
 }
 
 export function getPerformanceRecord(recordId: number): Promise<PerformanceRecord> {

@@ -1,4 +1,6 @@
 import { del, get, post } from './http'
+import type { AgentTask } from './agentTask'
+import { getPageItems, type PaginatedData } from './pagination'
 
 export interface ApiRequestDetails {
   path: string
@@ -78,7 +80,7 @@ export interface ApiAutomationCaseQuery {
 }
 
 export function getApiAutomationCases(params?: ApiAutomationCaseQuery): Promise<ApiAutomationCase[]> {
-  return get<ApiAutomationCase[]>('/api/v1/api-automation/cases', params)
+  return get<PaginatedData<ApiAutomationCase>>('/api/v1/api-automation/cases', params).then(getPageItems)
 }
 
 export function getApiAutomationCase(caseId: number): Promise<ApiAutomationCase> {
@@ -86,11 +88,14 @@ export function getApiAutomationCase(caseId: number): Promise<ApiAutomationCase>
 }
 
 export function getApiAutomationExecs(projectId?: number): Promise<ApiAutomationExec[]> {
-  return get<ApiAutomationExec[]>('/api/v1/api-automation/execs', projectId ? { project_id: projectId } : undefined)
+  return get<PaginatedData<ApiAutomationExec>>(
+    '/api/v1/api-automation/execs',
+    projectId ? { project_id: projectId } : undefined,
+  ).then(getPageItems)
 }
 
-export function createApiAutomationExec(payload: ApiAutomationExecPayload): Promise<ApiAutomationExec> {
-  return post<ApiAutomationExec>('/api/v1/api-automation/execs', payload)
+export function createApiAutomationExec(payload: ApiAutomationExecPayload): Promise<AgentTask<ApiExecutionDetails>> {
+  return post<AgentTask<ApiExecutionDetails>>('/api/v1/api-automation/execs', payload)
 }
 
 export function copyApiAutomationExec(execId: number): Promise<ApiAutomationExec> {

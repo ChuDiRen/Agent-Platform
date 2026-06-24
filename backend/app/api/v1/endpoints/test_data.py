@@ -13,8 +13,9 @@ from app.schemas.test_data import (
     TestDataTemplateOut,
     TestDataTemplateUpdate,
 )
-from app.agents.test_data.service import generate_test_data_response
 from app.core.response import success, fail, paginated
+from app.schemas.agent_task import AgentTaskOut
+from app.services.agent_task_enqueue import create_and_enqueue_agent_task
 
 router = APIRouter()
 
@@ -37,9 +38,14 @@ def _template_to_out(template) -> TestDataTemplateOut:
 
 
 @router.post("/generate")
-def generate_test_data(payload: TestDataGenerateRequest):
-    result = generate_test_data_response(payload)
-    return success(data=result.model_dump())
+def generate_test_data(payload: TestDataGenerateRequest, db: Session = Depends(get_db)):
+    task = create_and_enqueue_agent_task(
+        db,
+        agent_key="test_data",
+        project_id=None,
+        input_payload=payload.model_dump(),
+    )
+    return success(data=AgentTaskOut.model_validate(task).model_dump(mode="json"))
 
 
 @router.get("/templates/")

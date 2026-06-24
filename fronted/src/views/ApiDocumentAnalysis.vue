@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox, type UploadFile } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { useAgentTaskRunner } from '@/composables/useAgentTaskRunner'
 import {
   analyzeApiDocument,
   createApiDocument,
@@ -9,6 +10,7 @@ import {
   getApiDocuments,
   updateApiDocument,
   type ApiDocument,
+  type ApiDocumentAnalysisResponse,
   type ApiDocumentFinding,
 } from '@/api/apiDocument'
 
@@ -31,6 +33,24 @@ const activeTab = ref<'analysis' | 'history'>('analysis')
 const expandedFinding = ref<string | null>(null)
 const importedFileName = ref('')
 const importedContent = ref('')
+const taskRunner = useAgentTaskRunner<ApiDocumentAnalysisResponse>('api_document')
+taskRunner.onFinished(async (task) => {
+  const response = task.result_payload?.output
+  if (task.status === 'succeeded' && response?.findings && selectedDocument.value) {
+    findings.value = response.findings
+    expandedFinding.value = findings.value[0]?.id || null
+    const updated = await updateApiDocument(selectedDocument.value.id, {
+      content: editorContent.value,
+      ai_suggest: findings.value,
+    })
+    documents.value = documents.value.map((item) => (item.id === updated.id ? updated : item))
+    processingVisible.value = false
+    analysisVisible.value = true
+  }
+  if (task.status === 'failed') {
+    processingVisible.value = false
+  }
+})
 
 const selectedDocument = computed(() => documents.value.find((item) => item.id === selectedId.value) || null)
 const rootDocuments = computed(() => documents.value.filter((item) => !item.parent_id))
@@ -182,21 +202,13 @@ async function runAnalysis() {
   analysisVisible.value = false
   processingVisible.value = true
   try {
-    const response = await analyzeApiDocument({
+    await taskRunner.run({
       document_id: selectedDocument.value.id,
       title: selectedDocument.value.title,
       content: editorContent.value,
       extra_prompt: extraPrompt.value,
     })
-    findings.value = response.findings
-    expandedFinding.value = findings.value[0]?.id || null
-    const updated = await updateApiDocument(selectedDocument.value.id, {
-      content: editorContent.value,
-      ai_suggest: findings.value,
-    })
-    documents.value = documents.value.map((item) => (item.id === updated.id ? updated : item))
-    processingVisible.value = false
-    analysisVisible.value = true
+    if (!taskRunner.result.value) ElMessage.success('任务已提交，正在后台执行')
   } catch {
     processingVisible.value = false
   }

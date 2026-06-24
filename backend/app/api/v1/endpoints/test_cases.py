@@ -7,12 +7,12 @@ from app.schemas.test_case import (
     TestCaseApplyRequest,
     TestCaseCreate,
     TestCaseGenerateRequest,
-    TestCaseGenerateResponse,
     TestCaseOut,
     TestCaseUpdate,
 )
-from app.agents.test_case.service import generate_test_cases
 from app.core.response import success, fail, paginated
+from app.schemas.agent_task import AgentTaskOut
+from app.services.agent_task_enqueue import create_and_enqueue_agent_task
 
 router = APIRouter()
 
@@ -40,10 +40,14 @@ def create_test_case(test_case_in: TestCaseCreate, db: Session = Depends(get_db)
 
 
 @router.post("/generate")
-def generate_cases(payload: TestCaseGenerateRequest):
-    cases, elapsed_ms = generate_test_cases(payload)
-    result = TestCaseGenerateResponse(cases=cases, elapsed_ms=elapsed_ms)
-    return success(data=result.model_dump())
+def generate_cases(payload: TestCaseGenerateRequest, db: Session = Depends(get_db)):
+    task = create_and_enqueue_agent_task(
+        db,
+        agent_key="test_case",
+        project_id=payload.project_id,
+        input_payload=payload.model_dump(),
+    )
+    return success(data=AgentTaskOut.model_validate(task).model_dump(mode="json"))
 
 
 @router.post("/apply")

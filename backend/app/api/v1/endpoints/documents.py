@@ -13,12 +13,9 @@ from app.schemas.document import (
     RequirementReviewRequest,
     RequirementReviewResponse,
 )
-from app.agents.requirement_review import (
-    areview_requirement,
-    review_requirement,
-    stream_review_requirement,
-)
 from app.core.response import success, fail, paginated
+from app.schemas.agent_task import AgentTaskOut
+from app.services.agent_task_enqueue import create_and_enqueue_agent_task
 from app.utils.file_parser import extract_text, SUPPORTED_EXTENSIONS
 
 router = APIRouter()
@@ -129,33 +126,11 @@ def delete_document(document_id: int, db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 
 @router.post("/review")
-def review_document(payload: RequirementReviewRequest):
-    """同步评估需求文档 (Deep Agents invoke)。"""
-    result = review_requirement(payload)
-    return success(data=result.model_dump())
-
-
-@router.post("/review/async")
-async def review_document_async(payload: RequirementReviewRequest):
-    """异步评估需求文档 (Deep Agents ainvoke)。"""
-    result = await areview_requirement(payload)
-    return success(data=result.model_dump())
-
-
-@router.post("/review/stream")
-async def review_document_stream(payload: RequirementReviewRequest):
-    """流式评估需求文档 (Deep Agents astream)。"""
-
-    async def event_generator():
-        async for event in stream_review_requirement(payload):
-            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        },
+def review_document(payload: RequirementReviewRequest, db: Session = Depends(get_db)):
+    """创建分布式需求评审任务。"""
+    task = create_and_enqueue_agent_task(
+        db,
+        agent_key="requirement_review",
+        input_payload=payload.model_dump(),
     )
+    return success(data=AgentTaskOut.model_validate(task).model_dump(mode="json"))

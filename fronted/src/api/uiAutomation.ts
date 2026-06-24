@@ -1,4 +1,6 @@
 import { del, get, post } from './http'
+import type { AgentTask } from './agentTask'
+import { getPageItems, type PaginatedData } from './pagination'
 
 export interface UiActionStep {
   action: string
@@ -74,15 +76,18 @@ export interface UiAutomationCaseQuery {
 }
 
 export function getUiAutomationCases(params?: UiAutomationCaseQuery): Promise<UiAutomationCase[]> {
-  return get<UiAutomationCase[]>('/api/v1/ui-automation/cases', params)
+  return get<PaginatedData<UiAutomationCase>>('/api/v1/ui-automation/cases', params).then(getPageItems)
 }
 
 export function getUiAutomationExecs(projectId?: number): Promise<UiAutomationExec[]> {
-  return get<UiAutomationExec[]>('/api/v1/ui-automation/execs', projectId ? { project_id: projectId } : undefined)
+  return get<PaginatedData<UiAutomationExec>>(
+    '/api/v1/ui-automation/execs',
+    projectId ? { project_id: projectId } : undefined,
+  ).then(getPageItems)
 }
 
-export function createUiAutomationExec(payload: UiAutomationExecPayload): Promise<UiAutomationExec> {
-  return post<UiAutomationExec>('/api/v1/ui-automation/execs', payload)
+export function createUiAutomationExec(payload: UiAutomationExecPayload): Promise<AgentTask<UiExecutionDetails>> {
+  return post<AgentTask<UiExecutionDetails>>('/api/v1/ui-automation/execs', payload)
 }
 
 export function copyUiAutomationExec(execId: number): Promise<UiAutomationExec> {

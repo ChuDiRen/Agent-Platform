@@ -3,14 +3,15 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { useAgentTaskRunner } from '@/composables/useAgentTaskRunner'
 import {
   applyGeneratedTestCases,
   deleteTestCase,
-  generateTestCases,
   getTestCases,
   updateTestCase,
   type RequirementModule,
   type TestCase,
+  type TestCaseGenerateResponse,
   type TestCasePayload,
 } from '@/api/testCase'
 
@@ -35,6 +36,23 @@ const generatedTableRef = ref<ComponentPublicInstance & { toggleRowSelection: (r
 const generatedCases = ref<TestCasePayload[]>([])
 const selectedGenerated = ref<TestCasePayload[]>([])
 const testCases = ref<TestCase[]>([])
+const taskRunner = useAgentTaskRunner<TestCaseGenerateResponse>('test_case')
+taskRunner.onFinished((task) => {
+  const response = task.result_payload?.output
+  if (task.status === 'succeeded' && response?.cases) {
+    generatedCases.value = response.cases
+    selectedGenerated.value = [...response.cases]
+    generatedVisible.value = true
+    processingVisible.value = false
+    ElMessage.success(`AI生成完成，耗时${response.elapsed_ms}ms`)
+    setTimeout(() => {
+      generatedCases.value.forEach((item) => generatedTableRef.value?.toggleRowSelection(item, true))
+    })
+  }
+  if (task.status === 'failed') {
+    processingVisible.value = false
+  }
+})
 
 const editForm = reactive<TestCasePayload>({
   name: '',
@@ -95,21 +113,26 @@ async function runGenerate() {
   processingVisible.value = true
   loading.value = true
   try {
-    const response = await generateTestCases({
+    await taskRunner.run({
       project_id: projectId,
       module: selectedModule.value,
       extra_requirement: extraRequirement.value,
     })
-    generatedCases.value = response.cases
-    selectedGenerated.value = [...response.cases]
-    ElMessage.success(`AI生成完成，耗时${response.elapsed_ms}ms`)
-    generatedVisible.value = true
-    setTimeout(() => {
-      generatedCases.value.forEach((item) => generatedTableRef.value?.toggleRowSelection(item, true))
-    })
+    const response = taskRunner.result.value
+    if (response?.cases) {
+      generatedCases.value = response.cases
+      selectedGenerated.value = [...response.cases]
+      ElMessage.success(`AI生成完成，耗时${response.elapsed_ms}ms`)
+      generatedVisible.value = true
+      setTimeout(() => {
+        generatedCases.value.forEach((item) => generatedTableRef.value?.toggleRowSelection(item, true))
+      })
+    } else {
+      ElMessage.success('任务已提交，正在后台执行')
+    }
   } finally {
-    loading.value = false
-    processingVisible.value = false
+    loading.value = taskRunner.loading.value
+    processingVisible.value = taskRunner.loading.value
   }
 }
 

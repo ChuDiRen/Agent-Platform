@@ -1,4 +1,6 @@
 import { del, get, post, put } from './http'
+import type { AgentTask } from './agentTask'
+import { getPageItems, type PaginatedData } from './pagination'
 
 export interface RequirementModule {
   id: number
@@ -41,7 +43,7 @@ export interface TestCaseGenerateResponse {
 }
 
 export function getTestCases(params?: { project_id?: number; module_id?: number }): Promise<TestCase[]> {
-  return get<TestCase[]>('/api/v1/test-cases/', params)
+  return get<PaginatedData<TestCase>>('/api/v1/test-cases/', params).then(getPageItems)
 }
 
 export function createTestCase(data: TestCasePayload): Promise<TestCase> {
@@ -56,8 +58,8 @@ export function deleteTestCase(id: number): Promise<TestCase> {
   return del<TestCase>(`/api/v1/test-cases/${id}`)
 }
 
-export function generateTestCases(data: TestCaseGenerateRequest): Promise<TestCaseGenerateResponse> {
-  return post<TestCaseGenerateResponse>('/api/v1/test-cases/generate', data)
+export function generateTestCases(data: TestCaseGenerateRequest): Promise<AgentTask<TestCaseGenerateResponse>> {
+  return post<AgentTask<TestCaseGenerateResponse>>('/api/v1/test-cases/generate', data)
 }
 
 export function applyGeneratedTestCases(cases: TestCasePayload[]): Promise<TestCase[]> {

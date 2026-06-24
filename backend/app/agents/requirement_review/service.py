@@ -103,11 +103,53 @@ def _to_response(payload, content):
     )
 
 
+def _fallback_review(payload: RequirementReviewRequest, error: Exception | None = None) -> RequirementReviewResponse:
+    content = payload.content or ""
+    findings: list[RequirementFinding] = []
+    checks = [
+        ("acceptance-criteria", "补充验收标准", "需求中缺少可验证的验收标准，建议明确成功/失败判定。", "medium", ["验收", "标准", "判定"]),
+        ("error-handling", "补充异常场景", "需求中缺少失败、超时、重复提交等异常处理说明。", "medium", ["失败", "错误", "异常", "超时"]),
+        ("permission-rule", "明确权限规则", "需求中缺少角色、权限或数据访问边界说明。", "low", ["权限", "角色", "管理员"]),
+    ]
+    for finding_id, title, description, severity, keywords in checks:
+        if not any(keyword in content for keyword in keywords):
+            findings.append(RequirementFinding(
+                id=finding_id,
+                title=title,
+                description=description,
+                severity=severity,
+                category="本地规则评审",
+                adopted=True,
+            ))
+    if error is not None:
+        findings.append(RequirementFinding(
+            id="model-fallback",
+            title="已使用本地规则评审",
+            description=f"模型服务不可用，已回退到本地规则评审：{error}",
+            severity="low",
+            category="运行状态",
+            adopted=True,
+        ))
+    if not findings:
+        findings.append(RequirementFinding(
+            id="basic-review-pass",
+            title="基础需求结构完整",
+            description="需求包含基础业务描述，未发现阻断性缺口。",
+            severity="low",
+            category="本地规则评审",
+            adopted=True,
+        ))
+    return RequirementReviewResponse(document_id=payload.document_id, title=payload.title, findings=findings)
+
+
 def review_requirement(payload: RequirementReviewRequest, **agent_kwargs) -> RequirementReviewResponse:
-    agent = _get_agent(**agent_kwargs)
-    result = agent.invoke({"messages": _build_prompt(payload)})
-    content = result["messages"][-1].content if hasattr(result["messages"][-1], "content") else ""
-    return _to_response(payload, content)
+    try:
+        agent = _get_agent(**agent_kwargs)
+        result = agent.invoke({"messages": _build_prompt(payload)})
+        content = result["messages"][-1].content if hasattr(result["messages"][-1], "content") else ""
+        return _to_response(payload, content)
+    except Exception as exc:
+        return _fallback_review(payload, exc)
 
 
 async def areview_requirement(payload: RequirementReviewRequest, **agent_kwargs) -> RequirementReviewResponse:

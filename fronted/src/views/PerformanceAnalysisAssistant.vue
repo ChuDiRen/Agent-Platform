@@ -2,11 +2,13 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { useAgentTaskRunner } from '@/composables/useAgentTaskRunner'
 import {
   analyzePerformance,
   deletePerformanceRecord,
   getPerformanceRecords,
   type PerformanceMetric,
+  type PerformanceAnalyzeResponse,
   type PerformanceRecord,
 } from '@/api/performance'
 
@@ -19,6 +21,17 @@ const records = ref<PerformanceRecord[]>([])
 const currentRecord = ref<PerformanceRecord | null>(null)
 const detailRecord = ref<PerformanceRecord | null>(null)
 const detailVisible = ref(false)
+const taskRunner = useAgentTaskRunner<PerformanceAnalyzeResponse>('performance')
+taskRunner.onFinished((task) => {
+  const response = task.result_payload?.output
+  if (task.status === 'succeeded' && response?.record) {
+    currentRecord.value = response.record
+    records.value.unshift(response.record)
+    loading.value = false
+    ElMessage.success(`AI分析完成，耗时${response.elapsed_ms}ms`)
+  }
+  if (task.status === 'failed') loading.value = false
+})
 
 const form = reactive({
   name: '',
@@ -80,18 +93,16 @@ async function runAnalyze() {
   }
   loading.value = true
   try {
-    const response = await analyzePerformance({
+    await taskRunner.run({
       project_id: projectId,
       name: form.name,
       scenario: form.scenario,
       raw_text: form.rawText,
       metrics: metrics.value.filter((item) => item.name.trim()),
     })
-    currentRecord.value = response.record
-    records.value.unshift(response.record)
-    ElMessage.success(`AI分析完成，耗时${response.elapsed_ms}ms`)
+    if (!taskRunner.result.value) ElMessage.success('任务已提交，正在后台执行')
   } finally {
-    loading.value = false
+    loading.value = taskRunner.loading.value
   }
 }
 

@@ -17,6 +17,10 @@ function handleExit() {
   router.push('/projects')
 }
 
+function openTaskCenter() {
+  router.push('/agent-tasks')
+}
+
 function handleCommand(cmd: string) {
   if (cmd === 'logout') { userStore.logout(); router.push('/login') }
 }
@@ -85,6 +89,7 @@ onMounted(async () => {
       </div>
       <div class="topbar-right">
         <button class="exit-btn" @click="handleExit">退出项目</button>
+        <button class="exit-btn" @click="openTaskCenter">任务中心</button>
         <el-dropdown trigger="click" @command="handleCommand">
           <div class="admin">
             <div class="avatar">{{ (userStore.userName || '管')[0].toUpperCase() }}</div>

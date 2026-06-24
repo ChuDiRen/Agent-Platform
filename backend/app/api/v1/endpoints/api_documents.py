@@ -12,8 +12,9 @@ from app.schemas.api_document import (
     ApiDocumentOut,
     ApiDocumentUpdate,
 )
-from app.agents.api_document.service import analyze_api_document
 from app.core.response import success, fail, paginated
+from app.schemas.agent_task import AgentTaskOut
+from app.services.agent_task_enqueue import create_and_enqueue_agent_task
 from app.utils.file_parser import extract_text, SUPPORTED_EXTENSIONS
 
 router = APIRouter()
@@ -120,6 +121,10 @@ def delete_api_document(document_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/analysis")
-def analyze_document(payload: ApiDocumentAnalysisRequest):
-    result = analyze_api_document(payload)
-    return success(data=result.model_dump())
+def analyze_document(payload: ApiDocumentAnalysisRequest, db: Session = Depends(get_db)):
+    task = create_and_enqueue_agent_task(
+        db,
+        agent_key="api_document",
+        input_payload=payload.model_dump(),
+    )
+    return success(data=AgentTaskOut.model_validate(task).model_dump(mode="json"))

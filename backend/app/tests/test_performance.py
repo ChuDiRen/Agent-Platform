@@ -1,4 +1,4 @@
-def test_performance_analyze_list_detail_delete(client):
+def test_performance_analyze_list_detail_delete(client, response_data):
     response = client.post(
         "/api/v1/performance/analyze",
         json={
@@ -9,19 +9,10 @@ def test_performance_analyze_list_detail_delete(client):
         },
     )
     assert response.status_code == 200
-    body = response.json()
-    assert body["analysis"]["score"] < 100
-    assert body["record"]["configs"]["metrics"]
-    record_id = body["record"]["id"]
+    task = response_data(response)
+    assert task["agent_key"] == "performance"
+    assert task["status"] == "queued"
 
     list_response = client.get("/api/v1/performance/", params={"project_id": 1})
     assert list_response.status_code == 200
-    assert list_response.json()[0]["id"] == record_id
-
-    detail_response = client.get(f"/api/v1/performance/{record_id}")
-    assert detail_response.status_code == 200
-    assert detail_response.json()["configs"]["analysis"]["findings"]
-
-    delete_response = client.delete(f"/api/v1/performance/{record_id}")
-    assert delete_response.status_code == 200
-    assert delete_response.json()["id"] == record_id
+    assert response_data(list_response)["items"] == []

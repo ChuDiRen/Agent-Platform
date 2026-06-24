@@ -9,3 +9,4 @@ from app.models.ui_test_cases_exec import UiTestCasesExec  # noqa
 from app.models.performance import Performance  # noqa
 from app.models.document import Document  # noqa
 from app.models.api_document import ApiDocument  # noqa
+from app.models.agent_task import AgentArtifact, AgentTask, AgentTaskEvent  # noqa

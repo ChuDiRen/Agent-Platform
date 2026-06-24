@@ -47,6 +47,23 @@ def client(db):
         yield c
 
 
+@pytest.fixture(autouse=True)
+def disable_agent_task_delivery(monkeypatch):
+    """Legacy API tests verify HTTP/database contracts without Redis/Celery."""
+    monkeypatch.setattr("app.services.agent_task_enqueue.run_agent_task.delay", lambda task_id: None)
+
+
+@pytest.fixture
+def response_data():
+    """Unwrap the project's unified API response envelope."""
+    def _unwrap(response):
+        body = response.json()
+        assert body["code"] == 0
+        return body["data"]
+
+    return _unwrap
+
+
 @pytest.fixture
 def create_user_via_api(client):
     """辅助 fixture：通过 API 创建用户并返回响应数据。"""

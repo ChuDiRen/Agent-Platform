@@ -1,4 +1,6 @@
 import { del, get, post, put } from './http'
+import type { AgentTask } from './agentTask'
+import { getPageItems, type PaginatedData } from './pagination'
 
 export type ApiFindingSeverity = 'high' | 'medium' | 'low'
 
@@ -50,7 +52,10 @@ export interface ApiDocumentAnalysisResponse {
 }
 
 export function getApiDocuments(projectId?: number): Promise<ApiDocument[]> {
-  return get<ApiDocument[]>('/api/v1/api-documents/', projectId ? { project_id: projectId } : undefined)
+  return get<PaginatedData<ApiDocument>>(
+    '/api/v1/api-documents/',
+    projectId ? { project_id: projectId } : undefined,
+  ).then(getPageItems)
 }
 
 export function createApiDocument(data: ApiDocumentPayload): Promise<ApiDocument> {
@@ -70,6 +75,6 @@ export function deleteApiDocument(documentId: number): Promise<ApiDocument> {
 
 export function analyzeApiDocument(
   data: ApiDocumentAnalysisRequest,
-): Promise<ApiDocumentAnalysisResponse> {
-  return post<ApiDocumentAnalysisResponse>('/api/v1/api-documents/analysis', data)
+): Promise<AgentTask<ApiDocumentAnalysisResponse>> {
+  return post<AgentTask<ApiDocumentAnalysisResponse>>('/api/v1/api-documents/analysis', data)
 }

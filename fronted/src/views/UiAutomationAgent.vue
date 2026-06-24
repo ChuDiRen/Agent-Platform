@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { createAgentTask } from '@/api/agentTask'
 import {
   copyUiAutomationExec,
-  createUiAutomationExec,
   deleteUiAutomationExec,
   getUiAutomationCases,
   getUiAutomationExecs,
@@ -15,6 +16,7 @@ import {
 
 defineOptions({ name: 'UiAutomationAgent' })
 
+const router = useRouter()
 const projectId = 1
 const caseLoading = ref(false)
 const execLoading = ref(false)
@@ -115,22 +117,24 @@ async function submitTask() {
   }
   taskSubmitting.value = true
   try {
-    const created = await createUiAutomationExec({
+    const created = await createAgentTask({
+      agent_key: 'ui_automation',
       project_id: projectId,
-      name: taskForm.name,
-      exec_type: taskForm.execType,
-      case_ids: selectedCases.value.map((item) => item.id),
-      desc: taskForm.desc,
-      exec_param: {
-        base_url: taskForm.baseUrl,
-        browser: taskForm.browser,
-        credential: { username: taskForm.username, password: taskForm.password },
+      input_payload: {
+        name: taskForm.name,
+        exec_type: taskForm.execType,
+        case_ids: selectedCases.value.map((item) => item.id),
+        desc: taskForm.desc,
+        exec_param: {
+          base_url: taskForm.baseUrl,
+          browser: taskForm.browser,
+          credential: { username: taskForm.username, password: taskForm.password },
+        },
       },
     })
-    ElMessage.success('AI UI自动化任务已执行完成')
+    ElMessage.success(`AI UI自动化任务已提交 #${created.id}`)
     taskVisible.value = false
-    currentReport.value = created
-    reportVisible.value = true
+    await router.push({ path: '/agent-tasks', query: { task_id: String(created.id) } })
     await loadExecs()
   } finally {
     taskSubmitting.value = false

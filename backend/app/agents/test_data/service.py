@@ -22,12 +22,14 @@ def generate_test_data_response(payload):
         "target_format": fmt,
     })
     converted = json.loads(convert_result)
+    rows = data.get("data", [])
 
     elapsed_ms = max(1, int((time.perf_counter() - started) * 1000))
 
     return TestDataGenerateResponse(
+        data=rows,
         content=converted.get("content", ""),
         format=fmt,
-        rows=data.get("total_rows", 0),
+        count=data.get("total_rows", len(rows)),
         elapsed_ms=elapsed_ms,
     )
