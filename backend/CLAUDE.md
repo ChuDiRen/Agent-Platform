@@ -12,7 +12,7 @@ FastAPI + SQLAlchemy 2.0 + Pydantic v2 + Alembic + SQLite
 app/
 ├── main.py              # 入口，CORS 中间件 + 路由注册
 ├── core/
-│   ├── config.py        # pydantic-settings 配置（.env）
+│   ├── config.py        # pydantic-settings 配置（仅代码默认值）
 │   └── security.py      # JWT + bcrypt
 ├── db/
 │   ├── base_class.py    # SQLAlchemy 声明式基类（自动表名）
@@ -29,10 +29,6 @@ app/
 │   ├── deps.py          # get_db 依赖注入
 │   └── v1/endpoints/    # 路由处理器
 │       └── users.py
-├── tests/               # pytest 测试
-│   ├── conftest.py      # 测试 DB + client fixture
-│   ├── test_main.py
-│   └── test_users.py
 └── utils/
     └── utils.py         # generate_random_string
 ```
@@ -77,7 +73,7 @@ python -m venv venv
 .\venv\Scripts\pip install -r requirements.txt
 .\venv\Scripts\uvicorn app.main:app --reload --port 8000
 .\venv\Scripts\pytest -v
-.\venv\Scripts\pytest -v app\tests\test_users.py   # 单文件
+.\venv\Scripts\pytest -v ..\tests\api\test_users.py   # 单文件
 ```
 
 Alembic 迁移：
@@ -93,20 +89,14 @@ docker-compose up --build
 
 ## 配置
 
-`.env` 变量（参见 `.env.example`）：
-- `PROJECT_NAME` — 项目名
-- `DATABASE_URL` — 默认 `sqlite:///./test.db`
-- `SECRET_KEY` — JWT 密钥
-- `ALGORITHM` — JWT 算法（默认 HS256）
-- `ACCESS_TOKEN_EXPIRE_MINUTES` — token 过期时间
-- `BACKEND_CORS_ORIGINS` — CORS 允许源
-- `DEBUG` — 调试模式
+后端配置统一写在 `app/core/config.py` 的 `Settings` 默认值中。`Settings` 保留
+`pydantic-settings` 类型校验能力，但禁用环境变量、`.env` 和文件密钥配置源。
 
 ## 约定
 
 - 所有 `__init__.py` 为空（仅命名空间）
 - CRUD 单例在模块级导出（`user = CRUDUser(User)`）
 - 数据库会话通过 FastAPI 依赖注入（`get_db` 生成器）
-- 测试使用独立 SQLite DB，conftest 中覆盖 `get_db`
+- 测试统一放在仓库根目录 `tests/`，API 测试使用独立 SQLite DB 并在 conftest 中覆盖 `get_db`
 - API 版本前缀：`/api/v1/`
 - 中文注释和错误消息

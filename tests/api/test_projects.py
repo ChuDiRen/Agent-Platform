@@ -14,9 +14,9 @@ def _make_project(**overrides):
         "name": "测试项目",
         "description": "测试描述",
         "password": "",
-        "llm_url": "https://api.openai.com/v1",
+        "llm_url": "https://token-plan-sgp.xiaomimimo.com/v1",
         "llm_key": "sk-test",
-        "llm_model": "gpt-4o",
+        "llm_model": "mimo-v2.5-pro",
     }
     data.update(overrides)
     return data
@@ -49,13 +49,13 @@ class TestProjectCreate:
 
     def test_create_project_with_model_config(self, client):
         resp = client.post(PROJECT_BASE, json=_make_project(
-            lvm_url="https://vision.api.com/v1",
+            lvm_url="https://token-plan-sgp.xiaomimimo.com/v1",
             lvm_key="vk-test",
-            lvm_model="gpt-4o",
+            lvm_model="mimo-v2.5",
         ))
         assert resp.status_code == 200
         body = resp.json()["data"]
-        assert body["lvm_model"] == "gpt-4o"
+        assert body["lvm_model"] == "mimo-v2.5"
 
 
 @pytest.mark.smoke
@@ -96,9 +96,9 @@ class TestProjectUpdate:
 
     def test_update_project_model(self, client):
         pid = client.post(PROJECT_BASE, json=_make_project()).json()["data"]["id"]
-        resp = client.put(f"{PROJECT_BASE}{pid}", json={"llm_model": "gpt-4o-mini"})
+        resp = client.put(f"{PROJECT_BASE}{pid}", json={"llm_model": "mimo-v2.5-pro"})
         assert resp.status_code == 200
-        assert resp.json()["data"]["llm_model"] == "gpt-4o-mini"
+        assert resp.json()["data"]["llm_model"] == "mimo-v2.5-pro"
 
     def test_update_project_password(self, client):
         pid = client.post(PROJECT_BASE, json=_make_project()).json()["data"]["id"]

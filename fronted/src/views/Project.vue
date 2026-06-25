@@ -22,8 +22,8 @@ const pendingProject = ref<ProjectInfo | null>(null)
 
 const defaultForm: ProjectCreate = {
   name: '', description: '', password: '',
-  llm_url: '', llm_key: '', llm_model: '',
-  lvm_url: '', lvm_key: '', lvm_model: '',
+  llm_url: 'https://token-plan-sgp.xiaomimimo.com/v1', llm_key: '', llm_model: 'mimo-v2.5-pro',
+  lvm_url: 'https://token-plan-sgp.xiaomimimo.com/v1', lvm_key: '', lvm_model: 'mimo-v2.5',
 }
 const form = ref<ProjectCreate>({ ...defaultForm })
 const dialogTitle = computed(() => (isEdit.value ? '编辑项目' : '新建项目'))
@@ -197,12 +197,12 @@ onMounted(loadProjects)
         <div class="form-row">
           <div class="form-col">
             <el-form-item label="API 地址">
-              <el-input v-model="form.llm_url" placeholder="https://api.openai.com/v1" />
+              <el-input v-model="form.llm_url" placeholder="https://token-plan-sgp.xiaomimimo.com/v1" />
             </el-form-item>
           </div>
           <div class="form-col">
             <el-form-item label="模型名称">
-              <el-input v-model="form.llm_model" placeholder="gpt-4o" />
+              <el-input v-model="form.llm_model" placeholder="mimo-v2.5-pro" />
             </el-form-item>
           </div>
         </div>
@@ -214,12 +214,12 @@ onMounted(loadProjects)
         <div class="form-row">
           <div class="form-col">
             <el-form-item label="API 地址">
-              <el-input v-model="form.lvm_url" placeholder="https://api.openai.com/v1" />
+              <el-input v-model="form.lvm_url" placeholder="https://token-plan-sgp.xiaomimimo.com/v1" />
             </el-form-item>
           </div>
           <div class="form-col">
             <el-form-item label="模型名称">
-              <el-input v-model="form.lvm_model" placeholder="gpt-4o" />
+              <el-input v-model="form.lvm_model" placeholder="mimo-v2.5" />
             </el-form-item>
           </div>
         </div>

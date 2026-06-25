@@ -66,10 +66,10 @@ test.describe("Project 项目列表（真实数据）", () => {
   test("显示 LLM 模型标签", async ({ page, request }) => {
     await seedProject(request, {
       name: "E2E带模型项目",
-      llm_model: "gpt-4o",
+      llm_model: "mimo-v2.5-pro",
     });
     await page.goto("/projects");
-    await expect(page.getByText("LLM: gpt-4o")).toBeVisible();
+    await expect(page.getByText("LLM: mimo-v2.5-pro")).toBeVisible();
   });
 
   test("显示密码保护标签", async ({ page, request }) => {
@@ -98,6 +98,7 @@ test.describe("Project 新建项目", () => {
     await expect(page.getByText("项目名称")).toBeVisible();
     await expect(page.getByText("大语言模型 (LLM)")).toBeVisible();
     await expect(page.getByText("视觉模型 (LVM)")).toBeVisible();
+    await expect(page.locator(".project-form input").nth(5)).toHaveValue("mimo-v2.5");
   });
 
   test("通过弹窗创建项目成功", async ({ page }) => {

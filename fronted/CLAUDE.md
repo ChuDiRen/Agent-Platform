@@ -20,7 +20,7 @@ src/
 ├── store/store.ts       # Pinia 用户状态（持久化到 localStorage）
 ├── api/
 │   ├── http.ts          # Axios 封装（拦截器 + NProgress + 错误处理）
-│   ├── baseUrl.ts       # 环境 URL 区分
+│   ├── baseUrl.ts       # API Base URL 代码常量
 │   └── user.ts          # 用户 API（login / getUserInfo / getUsers）
 ├── utils/
 │   ├── auth.ts          # Cookie token 管理（js-cookie，key: vue3_token）
@@ -88,7 +88,7 @@ npm run test:e2e:report    # 查看报告
 - 前端：`http://localhost:3000`
 - 后端：`http://localhost:8000`
 - Vite 代理：`/api/*` → `http://localhost:8000`
-- 生产环境通过 `VITE_APP_WEB_URL` 环境变量配置后端地址
+- 前端不使用 `.env*` 文件；API Base URL 和代理目标写在代码配置中
 
 ## E2E 测试
 
