@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.api.deps import get_db
+from app.api.deps import get_current_active_user, get_db, require_admin
 from app.crud.user import user as user_crud
+from app.models.user import User as UserModel
 from app.schemas.user import User, UserCreate, UserUpdate, LoginRequest, LoginResponse
 from app.core.security import create_access_token
 from app.core.response import success, fail
@@ -19,7 +20,11 @@ def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{user_id}")
-def read_user(user_id: int, db: Session = Depends(get_db)):
+def read_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    _current_user: UserModel = Depends(get_current_active_user),
+):
     user = user_crud.get(db, user_id)
     if not user:
         return fail(message="User not found", code=404)
@@ -27,13 +32,23 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/")
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    _current_user: UserModel = Depends(require_admin),
+):
     items = user_crud.get_multi(db, skip=skip, limit=limit)
     return success(data=[User.model_validate(u).model_dump() for u in items])
 
 
 @router.put("/{user_id}")
-def update_user(user_id: int, user_in: UserUpdate, db: Session = Depends(get_db)):
+def update_user(
+    user_id: int,
+    user_in: UserUpdate,
+    db: Session = Depends(get_db),
+    _current_user: UserModel = Depends(get_current_active_user),
+):
     user = user_crud.get(db, user_id)
     if not user:
         return fail(message="User not found", code=404)
@@ -46,7 +61,11 @@ def update_user(user_id: int, user_in: UserUpdate, db: Session = Depends(get_db)
 
 
 @router.delete("/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db)):
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    _current_user: UserModel = Depends(require_admin),
+):
     user = user_crud.get(db, user_id)
     if not user:
         return fail(message="User not found", code=404)

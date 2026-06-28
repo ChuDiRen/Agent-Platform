@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.api.deps import get_db
+from app.api.deps import get_db, require_admin
 from app.crud.agent import agent as agent_crud
 from app.schemas.agent import AgentOut, AgentCreate, AgentUpdate
 from app.core.response import success, fail
@@ -22,13 +22,13 @@ def read_agent(agent_id: int, db: Session = Depends(get_db)):
     return success(data=AgentOut.model_validate(ag).model_dump())
 
 
-@router.post("/")
+@router.post("/", dependencies=[Depends(require_admin)])
 def create_agent(agent_in: AgentCreate, db: Session = Depends(get_db)):
     obj = agent_crud.create(db, obj_in=agent_in)
     return success(data=AgentOut.model_validate(obj).model_dump())
 
 
-@router.put("/{agent_id}")
+@router.put("/{agent_id}", dependencies=[Depends(require_admin)])
 def update_agent(agent_id: int, agent_in: AgentUpdate, db: Session = Depends(get_db)):
     ag = agent_crud.get(db, agent_id)
     if not ag:
@@ -37,7 +37,7 @@ def update_agent(agent_id: int, agent_in: AgentUpdate, db: Session = Depends(get
     return success(data=AgentOut.model_validate(updated).model_dump())
 
 
-@router.delete("/{agent_id}")
+@router.delete("/{agent_id}", dependencies=[Depends(require_admin)])
 def delete_agent(agent_id: int, db: Session = Depends(get_db)):
     ag = agent_crud.get(db, agent_id)
     if not ag:

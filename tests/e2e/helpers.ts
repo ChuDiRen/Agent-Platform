@@ -2,6 +2,19 @@ import { APIRequestContext, expect } from "@playwright/test";
 
 const BASE = "http://localhost:8000";
 
+type ApiEnvelope<T> = {
+  code: number;
+  message: string;
+  data: T;
+};
+
+async function unwrap<T>(res: { ok(): boolean; json(): Promise<ApiEnvelope<T>> }): Promise<T> {
+  expect(res.ok()).toBeTruthy();
+  const body = await res.json();
+  expect(body.code).toBe(0);
+  return body.data;
+}
+
 // ── Auth ──────────────────────────────────────────────
 
 export async function registerUser(
@@ -25,9 +38,8 @@ export async function loginUser(
   const res = await request.post(`${BASE}/api/v1/users/login`, {
     data: { email, password },
   });
-  expect(res.ok()).toBeTruthy();
-  const body = await res.json();
-  return body.access_token;
+  const login = await unwrap<{ access_token: string }>(res);
+  return login.access_token;
 }
 
 // ── Projects ──────────────────────────────────────────
@@ -53,8 +65,7 @@ export async function createProject(
     headers: { Authorization: `Bearer ${token}` },
     data,
   });
-  expect(res.ok()).toBeTruthy();
-  return res.json();
+  return unwrap(res);
 }
 
 export async function deleteProject(
@@ -71,8 +82,7 @@ export async function getProjects(request: APIRequestContext, token: string) {
   const res = await request.get(`${BASE}/api/v1/projects/`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  expect(res.ok()).toBeTruthy();
-  return res.json();
+  return unwrap(res);
 }
 
 // ── Agents ────────────────────────────────────────────
@@ -97,8 +107,7 @@ export async function createAgent(
     headers: { Authorization: `Bearer ${token}` },
     data,
   });
-  expect(res.ok()).toBeTruthy();
-  return res.json();
+  return unwrap(res);
 }
 
 export async function deleteAgent(
@@ -115,6 +124,85 @@ export async function getAgents(request: APIRequestContext, token: string) {
   const res = await request.get(`${BASE}/api/v1/agents/`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  expect(res.ok()).toBeTruthy();
-  return res.json();
+  return unwrap(res);
+}
+
+// ── Business test helpers ─────────────────────────────
+
+export async function createRequirementDocument(
+  request: APIRequestContext,
+  token: string,
+  data: Record<string, unknown>,
+) {
+  const res = await request.post(`${BASE}/api/v1/documents/`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data,
+  });
+  return unwrap(res);
+}
+
+export async function deleteRequirementDocument(
+  request: APIRequestContext,
+  token: string,
+  documentId: number,
+) {
+  await request.delete(`${BASE}/api/v1/documents/${documentId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function createApiDocument(
+  request: APIRequestContext,
+  token: string,
+  data: Record<string, unknown>,
+) {
+  const res = await request.post(`${BASE}/api/v1/api-documents/`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data,
+  });
+  return unwrap(res);
+}
+
+export async function deleteApiDocument(
+  request: APIRequestContext,
+  token: string,
+  documentId: number,
+) {
+  await request.delete(`${BASE}/api/v1/api-documents/${documentId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function createTestCase(
+  request: APIRequestContext,
+  token: string,
+  data: Record<string, unknown>,
+) {
+  const res = await request.post(`${BASE}/api/v1/test-cases/`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data,
+  });
+  return unwrap(res);
+}
+
+export async function deleteTestCase(
+  request: APIRequestContext,
+  token: string,
+  testCaseId: number,
+) {
+  await request.delete(`${BASE}/api/v1/test-cases/${testCaseId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function createAgentTask(
+  request: APIRequestContext,
+  token: string,
+  data: Record<string, unknown>,
+) {
+  const res = await request.post(`${BASE}/api/v1/agent-tasks/`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data,
+  });
+  return unwrap(res);
 }

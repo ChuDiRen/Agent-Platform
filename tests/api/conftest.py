@@ -22,6 +22,8 @@ from sqlalchemy.orm import sessionmaker
 from app.main import app
 from app.db.base_class import Base
 from app.api.deps import get_db
+from app.core.security import get_password_hash
+from app.models.user import User
 
 
 # ============================================================
@@ -136,8 +138,8 @@ def db(SessionLocal) -> Generator:
 
 
 @pytest.fixture(scope="function")
-def client(SessionLocal) -> Generator[TestClient, None, None]:
-    """每个测试函数独立的 FastAPI TestClient。"""
+def unauthenticated_client(SessionLocal) -> Generator[TestClient, None, None]:
+    """每个测试函数独立的未认证 FastAPI TestClient。"""
 
     def override_get_db():
         session = SessionLocal()
@@ -150,6 +152,24 @@ def client(SessionLocal) -> Generator[TestClient, None, None]:
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def client(unauthenticated_client: TestClient) -> TestClient:
+    """默认业务客户端：已携带普通用户 Bearer token。"""
+    email = "api-client@example.com"
+    password = "ApiClientPass123!"
+    unauthenticated_client.post(
+        "/api/v1/users/",
+        json={"email": email, "password": password, "full_name": "API测试用户"},
+    )
+    response = unauthenticated_client.post(
+        "/api/v1/users/login",
+        json={"email": email, "password": password},
+    )
+    token = response.json()["data"]["access_token"]
+    unauthenticated_client.headers.update({"Authorization": f"Bearer {token}"})
+    return unauthenticated_client
 
 
 @pytest.fixture(autouse=True)
@@ -198,10 +218,10 @@ def create_and_login(client: TestClient, create_user_via_api: Callable) -> Calla
             "/api/v1/users/login",
             json={"email": email, "password": password},
         )
-        token_data = login_response.json()
+        token_data = login_response.json()["data"]
 
         return {
-            "user": user_data,
+            "user": user_data["data"],
             "token": token_data["access_token"],
             "headers": {"Authorization": f"Bearer {token_data['access_token']}"},
         }
@@ -217,5 +237,41 @@ def auth_headers(client: TestClient, create_user_via_api: Callable) -> dict:
         "/api/v1/users/login",
         json={"email": "testuser@example.com", "password": "SecurePass123!"},
     )
-    token = response.json()["access_token"]
+    token = response.json()["data"]["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def login_headers(client: TestClient) -> Callable:
+    """辅助 fixture：按指定账号登录并返回 Authorization 请求头。"""
+
+    def _login(email: str, password: str) -> dict:
+        response = client.post(
+            "/api/v1/users/login",
+            json={"email": email, "password": password},
+        )
+        token = response.json()["data"]["access_token"]
+        return {"Authorization": f"Bearer {token}"}
+
+    return _login
+
+
+@pytest.fixture
+def admin_headers(unauthenticated_client: TestClient, db) -> dict:
+    """辅助 fixture：创建管理员并返回带 Authorization 的请求头。"""
+    admin = User(
+        email="admin-fixture@example.com",
+        hashed_password=get_password_hash("AdminPass123!"),
+        full_name="测试管理员",
+        is_active=True,
+        is_superuser=True,
+    )
+    db.add(admin)
+    db.commit()
+
+    response = unauthenticated_client.post(
+        "/api/v1/users/login",
+        json={"email": "admin-fixture@example.com", "password": "AdminPass123!"},
+    )
+    token = response.json()["data"]["access_token"]
     return {"Authorization": f"Bearer {token}"}

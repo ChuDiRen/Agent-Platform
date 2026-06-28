@@ -1,10 +1,5 @@
-import type { App } from 'vue'
-
-// 在此导入并注册全局公共组件
-// import MyComponent from './MyComponent.vue'
-
 export default {
-  install(app: App) {
-    // app.component('MyComponent', MyComponent)
+  install() {
+    // 全局公共组件集中注册入口，当前暂未启用。
   },
 }

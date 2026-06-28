@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { useProjectContext } from '@/composables/useProjectContext'
 import { createAgentTask } from '@/api/agentTask'
 import {
   copyApiAutomationExec,
@@ -18,7 +19,8 @@ import {
 defineOptions({ name: 'ApiAutomationAgent' })
 
 const router = useRouter()
-const projectId = 1
+const { requireProjectId } = useProjectContext()
+const projectId = requireProjectId()
 const caseLoading = ref(false)
 const execLoading = ref(false)
 const taskSubmitting = ref(false)
@@ -49,9 +51,7 @@ const taskForm = reactive({
   desc: '',
 })
 
-const moduleOptions = [
-  { label: '全部模块', value: '' },
-]
+const moduleOptions = [{ label: '全部模块', value: '' }]
 
 const priorityOptions = [
   { label: '全部优先级', value: '' },
@@ -244,12 +244,22 @@ onMounted(async () => {
           </el-form-item>
           <el-form-item label="优先级">
             <el-select v-model="filters.priority" placeholder="全部优先级" clearable>
-              <el-option v-for="item in priorityOptions" :key="String(item.value)" :label="item.label" :value="item.value" />
+              <el-option
+                v-for="item in priorityOptions"
+                :key="String(item.value)"
+                :label="item.label"
+                :value="item.value"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="指定模块">
             <el-select v-model="filters.moduleId" placeholder="全部模块" clearable>
-              <el-option v-for="item in moduleOptions" :key="String(item.value)" :label="item.label" :value="item.value" />
+              <el-option
+                v-for="item in moduleOptions"
+                :key="String(item.value)"
+                :label="item.label"
+                :value="item.value"
+              />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -278,13 +288,15 @@ onMounted(async () => {
           v-loading="caseLoading"
           :data="cases"
           stripe
-          @selection-change="(rows: ApiAutomationCase[]) => selectedCases = rows"
+          @selection-change="(rows: ApiAutomationCase[]) => (selectedCases = rows)"
         >
           <el-table-column type="selection" width="48" />
           <el-table-column prop="id" label="ID" width="96" />
           <el-table-column label="优先级" width="100">
             <template #default="{ row }">
-              <el-tag :type="priorityType(row.priority)" effect="light">{{ priorityText(row.priority) }}</el-tag>
+              <el-tag :type="priorityType(row.priority)" effect="light">{{
+                priorityText(row.priority)
+              }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="module_name" label="指定模块" width="150" />
@@ -346,7 +358,10 @@ onMounted(async () => {
           :key="item.id"
           :label="`${index + 1}.${item.module_name}`"
         >
-          <el-input :model-value="`username=${taskForm.username}; password=${taskForm.password}`" readonly />
+          <el-input
+            :model-value="`username=${taskForm.username}; password=${taskForm.password}`"
+            readonly
+          />
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="taskForm.desc" type="textarea" :rows="2" />
@@ -368,7 +383,7 @@ onMounted(async () => {
         v-loading="execLoading"
         :data="execs"
         stripe
-        @selection-change="(rows: ApiAutomationExec[]) => selectedExecs = rows"
+        @selection-change="(rows: ApiAutomationExec[]) => (selectedExecs = rows)"
       >
         <el-table-column type="selection" width="48" />
         <el-table-column prop="id" label="ID" width="80" />
@@ -393,10 +408,18 @@ onMounted(async () => {
     <el-dialog v-model="reportVisible" title="AI 执行报告" width="960px">
       <div v-if="currentReport?.details" class="report">
         <div class="summary">
-          <strong>成功{{ currentReport.details.summary.success }}个用例，失败{{ currentReport.details.summary.failed }}个用例</strong>
+          <strong
+            >成功{{ currentReport.details.summary.success }}个用例，失败{{
+              currentReport.details.summary.failed
+            }}个用例</strong
+          >
           <span>共 {{ currentReport.details.summary.total }} 条 · {{ currentReport.name }}</span>
         </div>
-        <div v-for="result in currentReport.details.results" :key="result.case_id" class="result-card">
+        <div
+          v-for="result in currentReport.details.results"
+          :key="result.case_id"
+          class="result-card"
+        >
           <div class="result-head">
             <h3>{{ result.case_name }}</h3>
             <el-tag :type="resultType(result)">{{ result.status }}</el-tag>
@@ -692,7 +715,13 @@ pre {
 }
 .automation-page {
   background: #f5f7fa;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
 }
 
 .workspace {

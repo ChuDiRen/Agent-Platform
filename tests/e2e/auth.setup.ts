@@ -2,7 +2,7 @@ import { test as setup, expect } from "@playwright/test";
 import { registerUser, loginUser } from "./helpers";
 
 const authFile = ".auth/user.json";
-const EMAIL = "e2e_admin@test.com";
+const EMAIL = `e2e_admin_${Date.now()}@test.com`;
 const PASSWORD = "E2eTest123!";
 
 setup("authenticate via real backend", async ({ page, request }) => {
@@ -12,22 +12,29 @@ setup("authenticate via real backend", async ({ page, request }) => {
   // Login and get real token
   const token = await loginUser(request, EMAIL, PASSWORD);
 
-  // Set token in localStorage before navigating
+  // Save real token in both places used by the app: Cookie for guards/API and localStorage for UI state.
+  await page.context().addCookies([
+    {
+      name: "vue3_token",
+      value: token,
+      domain: "localhost",
+      path: "/",
+    },
+  ]);
+
   await page.addInitScript(
-    ({ token, email }) => {
+    ({ token }) => {
       localStorage.setItem(
         "user_info",
         JSON.stringify({
-          state: {
-            token,
-            userName: "E2E管理员",
-            avatar: "",
-            role: "admin",
-          },
+          token,
+          userName: "E2E管理员",
+          avatar: "",
+          role: "admin",
         }),
       );
     },
-    { token, email: EMAIL },
+    { token },
   );
 
   // Navigate to trigger cookie/token setup

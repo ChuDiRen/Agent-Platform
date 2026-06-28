@@ -1,7 +1,9 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 import { ref } from 'vue'
-import { getToken } from '@/utils/auth'
+import router from '@/router'
+import { getToken, removeToken } from '@/utils/auth'
+import { useUserStore } from '@/store/store'
 import NProgress from '@/utils/nprogress'
 import { baseUrl } from './baseUrl'
 import { API_SUCCESS_CODE } from '@/types/api'
@@ -26,6 +28,21 @@ function decLoading() {
   }
 }
 
+function buildLoginRedirect() {
+  const current = router.currentRoute.value
+  const fullPath = current.fullPath || current.path
+  return `/login?redirect=${encodeURIComponent(fullPath)}`
+}
+
+function handleUnauthorized() {
+  removeToken()
+  useUserStore().resetUser()
+  const currentPath = router.currentRoute.value.path
+  if (!['/login', '/register'].includes(currentPath)) {
+    router.replace(buildLoginRedirect())
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Axios instance
 // ---------------------------------------------------------------------------
@@ -43,7 +60,7 @@ service.interceptors.request.use(
     incLoading()
     const token = getToken()
     if (token) {
-      config.headers['Authorization'] = token
+      config.headers['Authorization'] = `Bearer ${token}`
     }
     return config
   },
@@ -84,6 +101,7 @@ service.interceptors.response.use(
 
     const status = error.response?.status
     if (status === 401) {
+      handleUnauthorized()
       ElMessage.error('登录已过期，请重新登录')
     } else if (status === 403) {
       ElMessage.error('没有权限访问')

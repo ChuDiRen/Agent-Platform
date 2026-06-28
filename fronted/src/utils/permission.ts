@@ -15,7 +15,7 @@ router.beforeEach((to) => {
     }
   } else {
     if (!whiteList.includes(to.path)) {
-      return `/login?redirect=${to.path}`
+      return `/login?redirect=${encodeURIComponent(to.fullPath)}`
     }
   }
 })

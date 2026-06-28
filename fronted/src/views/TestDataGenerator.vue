@@ -245,7 +245,11 @@ onMounted(async () => {
                 :value="option.value"
               />
             </el-select>
-            <el-input v-model="field.rule" placeholder="生成规则，如：从1开始递增 / 用户名 / 密码" size="small" />
+            <el-input
+              v-model="field.rule"
+              placeholder="生成规则，如：从1开始递增 / 用户名 / 密码"
+              size="small"
+            />
             <button class="danger-icon" aria-label="删除字段" @click="removeField(index)">×</button>
           </div>
         </div>
@@ -560,7 +564,13 @@ pre {
 }
 .generator-page {
   background: #f5f7fa;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
 }
 
 .workspace {

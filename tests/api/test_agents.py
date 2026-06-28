@@ -28,25 +28,29 @@ def _make_agent(**overrides):
 class TestAgentCreate:
     """创建智能体。"""
 
-    def test_create_agent_success(self, client):
-        resp = client.post(AGENT_BASE, json=_make_agent())
+    def test_create_agent_success(self, client, admin_headers):
+        resp = client.post(AGENT_BASE, headers=admin_headers, json=_make_agent())
         assert resp.status_code == 200
         body = resp.json()["data"]
         assert body["name"] == "测试智能体"
         assert body["id"] > 0
 
-    def test_create_placeholder_agent(self, client):
-        resp = client.post(AGENT_BASE, json=_make_agent(
+    def test_create_placeholder_agent(self, client, admin_headers):
+        resp = client.post(AGENT_BASE, headers=admin_headers, json=_make_agent(
             name="占位智能体", is_placeholder=True, tags="[]"
         ))
         assert resp.status_code == 200
         assert resp.json()["data"]["is_placeholder"] is True
 
-    def test_create_agent_missing_name(self, client):
+    def test_create_agent_missing_name(self, client, admin_headers):
         data = _make_agent()
         del data["name"]
-        resp = client.post(AGENT_BASE, json=data)
+        resp = client.post(AGENT_BASE, headers=admin_headers, json=data)
         assert resp.status_code == 422
+
+    def test_create_agent_rejects_normal_user(self, client):
+        resp = client.post(AGENT_BASE, json=_make_agent())
+        assert resp.status_code == 403
 
 
 @pytest.mark.smoke
@@ -58,15 +62,15 @@ class TestAgentRead:
         assert resp.status_code == 200
         assert resp.json()["data"] == []
 
-    def test_list_agents_after_create(self, client):
-        client.post(AGENT_BASE, json=_make_agent(name="A", sort_order=1))
-        client.post(AGENT_BASE, json=_make_agent(name="B", sort_order=2))
+    def test_list_agents_after_create(self, client, admin_headers):
+        client.post(AGENT_BASE, headers=admin_headers, json=_make_agent(name="A", sort_order=1))
+        client.post(AGENT_BASE, headers=admin_headers, json=_make_agent(name="B", sort_order=2))
         resp = client.get(AGENT_BASE)
         assert resp.status_code == 200
         assert len(resp.json()["data"]) == 2
 
-    def test_get_agent_by_id(self, client):
-        create_resp = client.post(AGENT_BASE, json=_make_agent())
+    def test_get_agent_by_id(self, client, admin_headers):
+        create_resp = client.post(AGENT_BASE, headers=admin_headers, json=_make_agent())
         agent_id = create_resp.json()["data"]["id"]
         resp = client.get(f"{AGENT_BASE}{agent_id}")
         assert resp.status_code == 200
@@ -80,39 +84,39 @@ class TestAgentRead:
 class TestAgentUpdate:
     """更新智能体。"""
 
-    def test_update_agent_name(self, client):
-        create_resp = client.post(AGENT_BASE, json=_make_agent())
+    def test_update_agent_name(self, client, admin_headers):
+        create_resp = client.post(AGENT_BASE, headers=admin_headers, json=_make_agent())
         agent_id = create_resp.json()["data"]["id"]
-        resp = client.put(f"{AGENT_BASE}{agent_id}", json={"name": "新名称"})
+        resp = client.put(f"{AGENT_BASE}{agent_id}", headers=admin_headers, json={"name": "新名称"})
         assert resp.status_code == 200
         assert resp.json()["data"]["name"] == "新名称"
 
-    def test_update_agent_tags(self, client):
-        create_resp = client.post(AGENT_BASE, json=_make_agent())
+    def test_update_agent_tags(self, client, admin_headers):
+        create_resp = client.post(AGENT_BASE, headers=admin_headers, json=_make_agent())
         agent_id = create_resp.json()["data"]["id"]
         new_tags = '["新标签"]'
-        resp = client.put(f"{AGENT_BASE}{agent_id}", json={"tags": new_tags})
+        resp = client.put(f"{AGENT_BASE}{agent_id}", headers=admin_headers, json={"tags": new_tags})
         assert resp.status_code == 200
         assert resp.json()["data"]["tags"] == new_tags
 
-    def test_update_agent_not_found(self, client):
-        resp = client.put(f"{AGENT_BASE}99999", json={"name": "x"})
+    def test_update_agent_not_found(self, client, admin_headers):
+        resp = client.put(f"{AGENT_BASE}99999", headers=admin_headers, json={"name": "x"})
         assert resp.json()["code"] == 404
 
 
 class TestAgentDelete:
     """删除智能体。"""
 
-    def test_delete_agent(self, client):
-        create_resp = client.post(AGENT_BASE, json=_make_agent())
+    def test_delete_agent(self, client, admin_headers):
+        create_resp = client.post(AGENT_BASE, headers=admin_headers, json=_make_agent())
         agent_id = create_resp.json()["data"]["id"]
-        resp = client.delete(f"{AGENT_BASE}{agent_id}")
+        resp = client.delete(f"{AGENT_BASE}{agent_id}", headers=admin_headers)
         assert resp.status_code == 200
         # verify gone
         assert client.get(f"{AGENT_BASE}{agent_id}").json()["code"] == 404
 
-    def test_delete_agent_not_found(self, client):
-        resp = client.delete(f"{AGENT_BASE}99999")
+    def test_delete_agent_not_found(self, client, admin_headers):
+        resp = client.delete(f"{AGENT_BASE}99999", headers=admin_headers)
         assert resp.json()["code"] == 404
 
 
@@ -125,36 +129,36 @@ class TestAgentSeedData:
         "AI测试数据生成智能体", "AI性能数据分析助手", "更多智能体即将上线",
     ]
 
-    def _seed_all(self, client):
+    def _seed_all(self, client, admin_headers):
         """手动写入 9 条种子数据（模拟 startup 行为）。"""
         for i, name in enumerate(self.SEED_NAMES, 1):
-            client.post(AGENT_BASE, json=_make_agent(
+            client.post(AGENT_BASE, headers=admin_headers, json=_make_agent(
                 name=name,
                 sort_order=i,
                 is_placeholder=(name == "更多智能体即将上线"),
                 tags="[]" if name == "更多智能体即将上线" else '["标签"]',
             ))
 
-    def test_seed_agents_count(self, client):
-        self._seed_all(client)
+    def test_seed_agents_count(self, client, admin_headers):
+        self._seed_all(client, admin_headers)
         resp = client.get(AGENT_BASE)
         assert resp.status_code == 200
         assert len(resp.json()["data"]) == 9
 
-    def test_seed_agent_names(self, client):
-        self._seed_all(client)
+    def test_seed_agent_names(self, client, admin_headers):
+        self._seed_all(client, admin_headers)
         names = [a["name"] for a in client.get(AGENT_BASE).json()["data"]]
         assert "AI需求评估助手" in names
         assert "更多智能体即将上线" in names
 
-    def test_placeholder_agent_flag(self, client):
-        self._seed_all(client)
+    def test_placeholder_agent_flag(self, client, admin_headers):
+        self._seed_all(client, admin_headers)
         placeholders = [a for a in client.get(AGENT_BASE).json()["data"] if a["is_placeholder"]]
         assert len(placeholders) == 1
         assert placeholders[0]["name"] == "更多智能体即将上线"
 
-    def test_seed_agents_sorted(self, client):
-        self._seed_all(client)
+    def test_seed_agents_sorted(self, client, admin_headers):
+        self._seed_all(client, admin_headers)
         agents = client.get(AGENT_BASE).json()["data"]
         orders = [a["sort_order"] for a in agents]
         assert orders == sorted(orders)

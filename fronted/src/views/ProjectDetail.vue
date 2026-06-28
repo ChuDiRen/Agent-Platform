@@ -37,14 +37,28 @@ onMounted(loadProject)
     <header class="topbar animate-fade-in">
       <div class="topbar-left">
         <button class="back-btn" @click="router.push('/projects')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
         <div class="logo">
           <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="32" height="32" rx="8" fill="url(#logo-grad-d)" />
-            <path d="M10 13L16 9L22 13V19L16 23L10 19V13Z" stroke="white" stroke-width="1.5" fill="none" />
+            <path
+              d="M10 13L16 9L22 13V19L16 23L10 19V13Z"
+              stroke="white"
+              stroke-width="1.5"
+              fill="none"
+            />
             <circle cx="16" cy="16" r="2.5" fill="white" opacity="0.9" />
             <defs>
               <linearGradient id="logo-grad-d" x1="0" y1="0" x2="32" y2="32">
@@ -82,7 +96,16 @@ onMounted(loadProject)
             <div class="config-card">
               <div class="config-card-header">
                 <div class="config-icon llm-bg">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                 </div>
@@ -108,7 +131,16 @@ onMounted(loadProject)
             <div class="config-card">
               <div class="config-card-header">
                 <div class="config-icon lvm-bg">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
                     <circle cx="12" cy="12" r="10" />
                     <circle cx="12" cy="12" r="4" />
                     <line x1="21.17" y1="8" x2="12" y2="8" />
@@ -146,12 +178,16 @@ onMounted(loadProject)
             <div class="info-divider" />
             <div class="info-item">
               <span class="info-label">创建时间</span>
-              <span class="info-value">{{ project.created_at ? new Date(project.created_at).toLocaleString('zh-CN') : '-' }}</span>
+              <span class="info-value">{{
+                project.created_at ? new Date(project.created_at).toLocaleString('zh-CN') : '-'
+              }}</span>
             </div>
             <div class="info-divider" />
             <div class="info-item">
               <span class="info-label">更新时间</span>
-              <span class="info-value">{{ project.updated_at ? new Date(project.updated_at).toLocaleString('zh-CN') : '-' }}</span>
+              <span class="info-value">{{
+                project.updated_at ? new Date(project.updated_at).toLocaleString('zh-CN') : '-'
+              }}</span>
             </div>
           </div>
         </section>

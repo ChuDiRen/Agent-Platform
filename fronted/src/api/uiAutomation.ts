@@ -76,7 +76,9 @@ export interface UiAutomationCaseQuery {
 }
 
 export function getUiAutomationCases(params?: UiAutomationCaseQuery): Promise<UiAutomationCase[]> {
-  return get<PaginatedData<UiAutomationCase>>('/api/v1/ui-automation/cases', params).then(getPageItems)
+  return get<PaginatedData<UiAutomationCase>>('/api/v1/ui-automation/cases', params).then(
+    getPageItems,
+  )
 }
 
 export function getUiAutomationExecs(projectId?: number): Promise<UiAutomationExec[]> {
@@ -86,7 +88,9 @@ export function getUiAutomationExecs(projectId?: number): Promise<UiAutomationEx
   ).then(getPageItems)
 }
 
-export function createUiAutomationExec(payload: UiAutomationExecPayload): Promise<AgentTask<UiExecutionDetails>> {
+export function createUiAutomationExec(
+  payload: UiAutomationExecPayload,
+): Promise<AgentTask<UiExecutionDetails>> {
   return post<AgentTask<UiExecutionDetails>>('/api/v1/ui-automation/execs', payload)
 }
 

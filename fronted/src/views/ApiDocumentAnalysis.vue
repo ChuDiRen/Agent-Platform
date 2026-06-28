@@ -2,9 +2,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox, type UploadFile } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { useProjectContext } from '@/composables/useProjectContext'
 import { useAgentTaskRunner } from '@/composables/useAgentTaskRunner'
 import {
-  analyzeApiDocument,
   createApiDocument,
   deleteApiDocument,
   getApiDocuments,
@@ -16,7 +16,8 @@ import {
 
 defineOptions({ name: 'ApiDocumentAnalysis' })
 
-const projectId = 1
+const { requireProjectId } = useProjectContext()
+const projectId = requireProjectId()
 const documents = ref<ApiDocument[]>([])
 const selectedId = ref<number | null>(null)
 const editorContent = ref('')
@@ -52,7 +53,9 @@ taskRunner.onFinished(async (task) => {
   }
 })
 
-const selectedDocument = computed(() => documents.value.find((item) => item.id === selectedId.value) || null)
+const selectedDocument = computed(
+  () => documents.value.find((item) => item.id === selectedId.value) || null,
+)
 const rootDocuments = computed(() => documents.value.filter((item) => !item.parent_id))
 
 function childrenOf(parentId: number) {
@@ -61,8 +64,31 @@ function childrenOf(parentId: number) {
 
 function currentPath(document: ApiDocument | null) {
   if (!document) return '当前查看：未选择接口文档'
-  const parent = document.parent_id ? documents.value.find((item) => item.id === document.parent_id) : null
+  const parent = document.parent_id
+    ? documents.value.find((item) => item.id === document.parent_id)
+    : null
   return `当前查看 - ${parent ? `${parent.name}` : '接口文档'}${document.is_directory ? '' : `\\${document.name}`}`
+}
+
+function seedContent() {
+  return `# 接口名称
+
+## 请求信息
+- Method: GET
+- URL: /api/example
+
+## 请求参数
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| id | number | 是 | 资源 ID |
+
+## 响应示例
+\`\`\`json
+{
+  "code": 200,
+  "data": {}
+}
+\`\`\``
 }
 
 async function loadDocuments() {
@@ -124,7 +150,8 @@ async function removeDocument(document: ApiDocument) {
   if (selectedId.value && removedIds.includes(selectedId.value)) {
     selectedId.value = null
     editorContent.value = ''
-    if (documents.value.length) selectDocument(documents.value.find((item) => !item.is_directory) || documents.value[0])
+    if (documents.value.length)
+      selectDocument(documents.value.find((item) => !item.is_directory) || documents.value[0])
   }
   ElMessage.success('已删除')
 }
@@ -157,7 +184,8 @@ function beforeUpload(file: UploadFile) {
 async function confirmImport() {
   const name = importedFileName.value.replace(/\.(md|docx?)$/i, '') || `接口文档${Date.now()}`
   const content = importedContent.value || seedContent()
-  const target = selectedDocument.value && !selectedDocument.value.is_directory ? selectedDocument.value : null
+  const target =
+    selectedDocument.value && !selectedDocument.value.is_directory ? selectedDocument.value : null
 
   if (replaceExisting.value && target) {
     const updated = await updateApiDocument(target.id, {
@@ -169,12 +197,14 @@ async function confirmImport() {
     documents.value = documents.value.map((item) => (item.id === updated.id ? updated : item))
     selectDocument(updated)
   } else {
-    const parent = rootDocuments.value.find((item) => item.is_directory) || await createApiDocument({
-      project_id: projectId,
-      name: '接口文档',
-      title: '接口文档',
-      is_directory: true,
-    })
+    const parent =
+      rootDocuments.value.find((item) => item.is_directory) ||
+      (await createApiDocument({
+        project_id: projectId,
+        name: '接口文档',
+        title: '接口文档',
+        is_directory: true,
+      }))
     if (!documents.value.some((item) => item.id === parent.id)) documents.value.push(parent)
     const created = await createApiDocument({
       project_id: projectId,
@@ -195,7 +225,11 @@ async function confirmImport() {
 }
 
 async function runAnalysis() {
-  if (!selectedDocument.value || selectedDocument.value.is_directory || !editorContent.value.trim()) {
+  if (
+    !selectedDocument.value ||
+    selectedDocument.value.is_directory ||
+    !editorContent.value.trim()
+  ) {
     ElMessage.warning('请先选择并填写接口文档')
     return
   }
@@ -238,7 +272,11 @@ onMounted(loadDocuments)
 
         <div class="doc-list">
           <template v-for="root in rootDocuments" :key="root.id">
-            <div class="doc-row" :class="{ active: root.id === selectedId }" @click="selectDocument(root)">
+            <div
+              class="doc-row"
+              :class="{ active: root.id === selectedId }"
+              @click="selectDocument(root)"
+            >
               <el-checkbox />
               <span class="doc-name">{{ root.name }}</span>
               <button @click.stop="selectDocument(root)">查看</button>
@@ -274,8 +312,9 @@ onMounted(loadDocuments)
         <div class="editor-panel">
           <div class="toolbar">
             <span>☺</span><span>H</span><span>B</span><span>I</span><span>S</span><span>↗</span>
-            <span>☷</span><span>☑</span><span>▷</span><span>—</span><span>&lt;/&gt;</span><span>↕</span>
-            <span>↧</span><span>☁</span><span>▦</span><span>○</span><span>✎</span><span>…</span>
+            <span>☷</span><span>☑</span><span>▷</span><span>—</span><span>&lt;/&gt;</span
+            ><span>↕</span> <span>↧</span><span>☁</span><span>▦</span><span>○</span><span>✎</span
+            ><span>…</span>
           </div>
           <textarea
             v-model="editorContent"
@@ -309,7 +348,9 @@ onMounted(loadDocuments)
         <p v-if="importedFileName" class="file-name">{{ importedFileName }}</p>
 
         <div class="field-label">导入选项</div>
-        <el-checkbox v-model="replaceExisting">替换现有文档如果勾选，将删除当前项目的所有，并替换为文档内容</el-checkbox>
+        <el-checkbox v-model="replaceExisting"
+          >替换现有文档如果勾选，将删除当前项目的所有，并替换为文档内容</el-checkbox
+        >
 
         <div class="field-label">标题层级</div>
         <el-select v-model="titleLevel" class="full">
@@ -331,14 +372,21 @@ onMounted(loadDocuments)
       class="analysis-dialog"
     >
       <div class="tabs">
-        <button :class="{ active: activeTab === 'analysis' }" @click="activeTab = 'analysis'">文档评审</button>
-        <button :class="{ active: activeTab === 'history' }" @click="activeTab = 'history'">历史记录</button>
+        <button :class="{ active: activeTab === 'analysis' }" @click="activeTab = 'analysis'">
+          文档评审
+        </button>
+        <button :class="{ active: activeTab === 'history' }" @click="activeTab = 'history'">
+          历史记录
+        </button>
       </div>
 
       <template v-if="activeTab === 'analysis'">
         <div v-if="!findings.length" class="empty">暂无评审结果</div>
         <div v-for="(finding, index) in findings" :key="finding.id" class="finding">
-          <div class="finding-head" @click="expandedFinding = expandedFinding === finding.id ? null : finding.id">
+          <div
+            class="finding-head"
+            @click="expandedFinding = expandedFinding === finding.id ? null : finding.id"
+          >
             <el-checkbox v-model="finding.adopted" />
             <span>{{ index + 1 }}. {{ finding.title }}</span>
             <b>{{ expandedFinding === finding.id ? '⌄' : '›' }}</b>
@@ -362,11 +410,17 @@ onMounted(loadDocuments)
       </template>
     </el-dialog>
 
-    <el-dialog v-model="processingVisible" width="720px" :show-close="false" :close-on-click-modal="false">
+    <el-dialog
+      v-model="processingVisible"
+      width="720px"
+      :show-close="false"
+      :close-on-click-modal="false"
+    >
       <div class="processing">
         <h3>AI智能体正在处理...</h3>
         <p class="spin">AI正在处理中...</p>
-        <pre>开始生成内容...
+        <pre>
+开始生成内容...
 ```json
 {{ findings.length ? JSON.stringify(findings[0], null, 2) : '{ "status": "analyzing" }' }}
 ```</pre>
@@ -713,7 +767,13 @@ button {
 }
 .api-page {
   background: #f5f7fa;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
 }
 
 .api-layout {
@@ -732,7 +792,7 @@ button {
 .workspace-head {
   border-radius: 18px;
   background: #eef6ff;
-  color: #1E88E5;
+  color: #1e88e5;
 }
 
 .api-page {

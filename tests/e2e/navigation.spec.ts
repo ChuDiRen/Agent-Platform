@@ -10,6 +10,8 @@ test.describe("页面导航", () => {
   });
 
   test("未登录时访问受保护页面跳转登录", async ({ page }) => {
+    await page.context().clearCookies();
+    await page.addInitScript(() => localStorage.clear());
     await page.goto("/projects");
     await expect(page).toHaveURL(/\/login/);
   });
@@ -18,7 +20,10 @@ test.describe("页面导航", () => {
     const token = await loginUser(request, EMAIL, PASSWORD);
     await page.addInitScript((t) => {
       localStorage.setItem("user_info", JSON.stringify({
-        state: { token: t, userName: "导航测试", avatar: "", role: "admin" },
+        token: t,
+        userName: "导航测试",
+        avatar: "",
+        role: "admin",
       }));
     }, token);
     await page.goto("/projects");
@@ -29,18 +34,24 @@ test.describe("页面导航", () => {
     const token = await loginUser(request, EMAIL, PASSWORD);
     await page.addInitScript((t) => {
       localStorage.setItem("user_info", JSON.stringify({
-        state: { token: t, userName: "导航测试", avatar: "", role: "admin" },
+        token: t,
+        userName: "导航测试",
+        avatar: "",
+        role: "admin",
       }));
     }, token);
     await page.goto("/agent-hub");
-    await expect(page.getByText("大熊AI智能体")).toBeVisible();
+    await expect(page.getByText("大熊AI智能体", { exact: true })).toBeVisible();
   });
 
   test("从项目管理进入 agent-hub", async ({ page, request }) => {
     const token = await loginUser(request, EMAIL, PASSWORD);
     await page.addInitScript((t) => {
       localStorage.setItem("user_info", JSON.stringify({
-        state: { token: t, userName: "导航测试", avatar: "", role: "admin" },
+        token: t,
+        userName: "导航测试",
+        avatar: "",
+        role: "admin",
       }));
     }, token);
     await page.goto("/projects");
@@ -48,7 +59,7 @@ test.describe("页面导航", () => {
     const enterBtn = page.locator(".action-enter").first();
     if (await enterBtn.isVisible().catch(() => false)) {
       await enterBtn.click();
-      await expect(page).toHaveURL(/\/agent-hub/);
+      await expect(page).toHaveURL(/\/agent-hub\?projectId=\d+/);
     }
   });
 });

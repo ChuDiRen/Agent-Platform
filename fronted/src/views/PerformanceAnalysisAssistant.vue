@@ -2,9 +2,9 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { useProjectContext } from '@/composables/useProjectContext'
 import { useAgentTaskRunner } from '@/composables/useAgentTaskRunner'
 import {
-  analyzePerformance,
   deletePerformanceRecord,
   getPerformanceRecords,
   type PerformanceMetric,
@@ -14,7 +14,8 @@ import {
 
 defineOptions({ name: 'PerformanceAnalysisAssistant' })
 
-const projectId = 1
+const { requireProjectId } = useProjectContext()
+const projectId = requireProjectId()
 const loading = ref(false)
 const recordsLoading = ref(false)
 const records = ref<PerformanceRecord[]>([])
@@ -39,9 +40,7 @@ const form = reactive({
   rawText: '',
 })
 
-const metrics = ref<PerformanceMetric[]>([
-  { name: '', value: 0, unit: '', threshold: 0 },
-])
+const metrics = ref<PerformanceMetric[]>([{ name: '', value: 0, unit: '', threshold: 0 }])
 
 const latestAnalysis = computed(() => currentRecord.value?.configs.analysis || null)
 const latestMetrics = computed(() => currentRecord.value?.configs.metrics || metrics.value)
@@ -52,13 +51,11 @@ function isDemoPerformanceRecord(record: PerformanceRecord) {
   return (
     config.name === 'smoke' ||
     config.scenario.includes('互联网小说') ||
-    (
-      metricNames.has('平均响应时间') &&
+    (metricNames.has('平均响应时间') &&
       metricNames.has('P95响应时间') &&
       metricNames.has('错误率') &&
       metricNames.has('吞吐量') &&
-      metricNames.has('CPU使用率')
-    )
+      metricNames.has('CPU使用率'))
   )
 }
 
@@ -154,7 +151,9 @@ onMounted(loadRecords)
             <p>导入压测指标，自动识别瓶颈、断言风险并生成优化建议。</p>
           </div>
           <div class="head-actions">
-            <el-button type="primary" :loading="loading" @click="runAnalyze">开始 AI 分析</el-button>
+            <el-button type="primary" :loading="loading" @click="runAnalyze"
+              >开始 AI 分析</el-button
+            >
           </div>
         </div>
 
@@ -199,7 +198,9 @@ onMounted(loadRecords)
           <div v-for="metric in latestMetrics" :key="metric.name" class="metric-card">
             <span>{{ metric.name }}</span>
             <strong>{{ metric.value }}{{ metric.unit }}</strong>
-            <el-tag size="small" :type="metricStatus(metric)">阈值 {{ metric.threshold ?? '-' }}{{ metric.unit }}</el-tag>
+            <el-tag size="small" :type="metricStatus(metric)"
+              >阈值 {{ metric.threshold ?? '-' }}{{ metric.unit }}</el-tag
+            >
           </div>
         </div>
 
@@ -208,7 +209,9 @@ onMounted(loadRecords)
           <div v-for="finding in latestAnalysis.findings" :key="finding.title" class="finding-item">
             <div class="finding-title">
               <strong>{{ finding.title }}</strong>
-              <el-tag :type="severityType(finding.severity)" size="small">{{ finding.severity }}</el-tag>
+              <el-tag :type="severityType(finding.severity)" size="small">{{
+                finding.severity
+              }}</el-tag>
             </div>
             <p>{{ finding.description }}</p>
             <span>{{ finding.suggestion }}</span>
@@ -254,7 +257,9 @@ onMounted(loadRecords)
         </div>
         <h3>趋势判断</h3>
         <ul>
-          <li v-for="trend in detailRecord.configs.analysis?.trends || []" :key="trend">{{ trend }}</li>
+          <li v-for="trend in detailRecord.configs.analysis?.trends || []" :key="trend">
+            {{ trend }}
+          </li>
         </ul>
         <h3>配置 JSON</h3>
         <pre>{{ JSON.stringify(detailRecord.configs, null, 2) }}</pre>
@@ -544,7 +549,13 @@ onMounted(loadRecords)
 }
 .performance-page {
   background: #f5f7fa;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
 }
 
 .workspace {
@@ -596,7 +607,9 @@ onMounted(loadRecords)
 }
 
 .metric-row {
-  grid-template-columns: minmax(140px, 1fr) minmax(120px, 150px) minmax(90px, 120px) minmax(120px, 150px) auto;
+  grid-template-columns:
+    minmax(140px, 1fr) minmax(120px, 150px) minmax(90px, 120px) minmax(120px, 150px)
+    auto;
 }
 
 .metric-grid {

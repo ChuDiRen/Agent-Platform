@@ -43,7 +43,9 @@ export interface TestDataTemplatePayload extends TestDataGenerateRequest {
   description?: string | null
 }
 
-export function generateTestData(data: TestDataGenerateRequest): Promise<AgentTask<TestDataGenerateResponse>> {
+export function generateTestData(
+  data: TestDataGenerateRequest,
+): Promise<AgentTask<TestDataGenerateResponse>> {
   return post<AgentTask<TestDataGenerateResponse>>('/api/v1/test-data/generate', data)
 }
 

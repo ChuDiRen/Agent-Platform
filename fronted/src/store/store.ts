@@ -20,15 +20,19 @@ export const useUserStore = defineStore(
       role.value = info.role
     }
 
-    function logout() {
-      removeToken()
+    function resetUser() {
       token.value = ''
       userName.value = ''
       avatar.value = ''
       role.value = ''
     }
 
-    return { token, userName, avatar, role, setToken, setUserInfo, logout }
+    function logout() {
+      removeToken()
+      resetUser()
+    }
+
+    return { token, userName, avatar, role, setToken, setUserInfo, resetUser, logout }
   },
   {
     persist: {
@@ -38,4 +42,3 @@ export const useUserStore = defineStore(
     },
   },
 )
-

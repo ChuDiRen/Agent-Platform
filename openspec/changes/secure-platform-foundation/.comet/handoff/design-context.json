@@ -1,0 +1,13 @@
+{
+  "change": "secure-platform-foundation",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "63c418080209c7156eea48f7b88c51a8f4d1e50ad891bf58f3cda73bb6f0cb6f",
+  "files": [
+    { "path": "openspec/changes/secure-platform-foundation/proposal.md", "sha256": "ac4b324345e9058c5ce219bb19535a607e5bc9f24edc8ae0afa6096855bc8d14" },
+    { "path": "openspec/changes/secure-platform-foundation/design.md", "sha256": "b6b73d089a83ab8ed45f2c4c3a5cbac4a1ce86707ff9de824de5947a5fb844da" },
+    { "path": "openspec/changes/secure-platform-foundation/tasks.md", "sha256": "a135f1340229f4138479ded5d349eb59932081998096df5068db8e0909a7614a" }
+  ]
+}

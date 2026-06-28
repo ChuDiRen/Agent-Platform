@@ -63,12 +63,33 @@ function fillDefault() {
         <div class="brand-icon animate-fade-up delay-1">
           <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="48" height="48" rx="12" fill="url(#grad)" />
-            <path d="M14 18L24 12L34 18V30L24 36L14 30V18Z" stroke="white" stroke-width="2" fill="none" />
+            <path
+              d="M14 18L24 12L34 18V30L24 36L14 30V18Z"
+              stroke="white"
+              stroke-width="2"
+              fill="none"
+            />
             <circle cx="24" cy="24" r="4" fill="white" opacity="0.9" />
             <line x1="24" y1="20" x2="24" y2="12" stroke="white" stroke-width="1.5" opacity="0.6" />
             <line x1="24" y1="28" x2="24" y2="36" stroke="white" stroke-width="1.5" opacity="0.6" />
-            <line x1="20.5" y1="22" x2="14" y2="18" stroke="white" stroke-width="1.5" opacity="0.6" />
-            <line x1="27.5" y1="26" x2="34" y2="30" stroke="white" stroke-width="1.5" opacity="0.6" />
+            <line
+              x1="20.5"
+              y1="22"
+              x2="14"
+              y2="18"
+              stroke="white"
+              stroke-width="1.5"
+              opacity="0.6"
+            />
+            <line
+              x1="27.5"
+              y1="26"
+              x2="34"
+              y2="30"
+              stroke="white"
+              stroke-width="1.5"
+              opacity="0.6"
+            />
             <defs>
               <linearGradient id="grad" x1="0" y1="0" x2="48" y2="48">
                 <stop stop-color="#2563eb" />
@@ -108,13 +129,9 @@ function fillDefault() {
           <h2>欢迎回来</h2>
           <p>登录以继续使用 Agent Platform</p>
         </div>
-        <el-form :model="form" @submit.prevent="handleLogin" class="login-form">
+        <el-form :model="form" class="login-form" @submit.prevent="handleLogin">
           <el-form-item>
-            <el-input
-              v-model="form.email"
-              placeholder="邮箱地址"
-              size="large"
-            />
+            <el-input v-model="form.email" placeholder="邮箱地址" size="large" />
           </el-form-item>
           <el-form-item>
             <el-input
@@ -130,8 +147,8 @@ function fillDefault() {
               type="primary"
               :loading="loading"
               size="large"
-              @click="handleLogin"
               class="login-btn"
+              @click="handleLogin"
             >
               登录
             </el-button>
@@ -139,8 +156,17 @@ function fillDefault() {
         </el-form>
         <div class="quick-fill">
           <button class="quick-fill-btn" @click="fillDefault">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
             <span>快速填写默认账号</span>
           </button>
@@ -155,7 +181,7 @@ function fillDefault() {
 </template>
 
 <style scoped lang="scss">
-@use "sass:color";
+@use 'sass:color';
 
 .login-page {
   display: flex;
@@ -364,6 +390,3 @@ function fillDefault() {
   }
 }
 </style>
-
-
-

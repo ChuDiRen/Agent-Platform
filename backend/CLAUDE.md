@@ -90,7 +90,7 @@ docker-compose up --build
 ## 配置
 
 后端配置统一写在 `app/core/config.py` 的 `Settings` 默认值中。`Settings` 保留
-`pydantic-settings` 类型校验能力，但禁用环境变量、`.env` 和文件密钥配置源。
+`pydantic-settings` 类型校验能力，允许环境变量覆盖代码默认值，但不读取 `.env` 和文件密钥配置源。
 
 ## 约定
 

@@ -39,7 +39,7 @@ const router = useRouter()
   gap: 8px;
   border: 0;
   background: transparent;
-  color: #1E88E5;
+  color: #1e88e5;
   font-size: 22px;
   font-weight: 700;
   cursor: pointer;
@@ -48,7 +48,7 @@ const router = useRouter()
 .logo-icon {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, #1E88E5, #1565C0);
+  background: linear-gradient(135deg, #1e88e5, #1565c0);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -76,8 +76,8 @@ const router = useRouter()
   transition: all 0.2s;
 
   &:hover {
-    border-color: #1E88E5;
-    color: #1E88E5;
+    border-color: #1e88e5;
+    color: #1e88e5;
   }
 }
 
@@ -91,6 +91,5 @@ const router = useRouter()
   .header-meta {
     flex-wrap: wrap;
   }
-
 }
 </style>

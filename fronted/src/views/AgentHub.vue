@@ -22,11 +22,17 @@ function openTaskCenter() {
 }
 
 function handleCommand(cmd: string) {
-  if (cmd === 'logout') { userStore.logout(); router.push('/login') }
+  if (cmd === 'logout') {
+    userStore.logout()
+    router.push('/login')
+  }
 }
 
 function handleUse(agent: AgentInfo) {
-  if (agent.is_placeholder) { ElMessage.info('敬请期待'); return }
+  if (agent.is_placeholder) {
+    ElMessage.info('敬请期待')
+    return
+  }
   if (agent.icon === 'data' || agent.name.includes('测试数据生成')) {
     router.push('/test-data-generator')
     return
@@ -64,7 +70,11 @@ function handleUse(agent: AgentInfo) {
 
 function parseTags(raw?: string): string[] {
   if (!raw) return []
-  try { return JSON.parse(raw) } catch { return [] }
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return []
+  }
 }
 
 onMounted(async () => {
@@ -94,7 +104,19 @@ onMounted(async () => {
           <div class="admin">
             <div class="avatar">{{ (userStore.userName || '管')[0].toUpperCase() }}</div>
             <span>{{ userStore.userName || '管理员' }}</span>
-            <svg class="dropdown-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+            <svg
+              class="dropdown-arrow"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
@@ -113,18 +135,27 @@ onMounted(async () => {
 
     <!-- Loading -->
     <div v-if="loading" class="loading-box">
-      <div class="spinner" /><span>加载中…</span>
+      <div class="spinner" />
+      <span>加载中…</span>
     </div>
 
     <!-- Cards Grid -->
     <section v-else class="grid">
-      <div
-        v-for="agent in agents" :key="agent.id"
-        class="card"
-      >
-        <div class="card-icon" :style="{ background: agent.gradient || 'linear-gradient(135deg,#e3f2fd,#bbdefb)' }">
-          <svg v-if="agent.icon" width="22" height="22" viewBox="0 0 24 24" fill="none"
-            stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      <div v-for="agent in agents" :key="agent.id" class="card">
+        <div
+          class="card-icon"
+          :style="{ background: agent.gradient || 'linear-gradient(135deg,#e3f2fd,#bbdefb)' }"
+        >
+          <svg
+            v-if="agent.icon"
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#fff"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
             v-html="ICON_SVG[agent.icon] || ICON_SVG['more']"
           />
           <span v-else>🤖</span>
@@ -136,16 +167,12 @@ onMounted(async () => {
             <span v-for="t in parseTags(agent.tags)" :key="t" class="tag">{{ t }}</span>
           </div>
         </div>
-        <button
-          v-if="agent.is_placeholder"
-          class="btn-disabled"
-          @click="handleUse(agent)"
-        >敬请期待 →</button>
-        <button
-          v-else
-          class="btn-use"
-          @click="handleUse(agent)"
-        >立即使用 <span class="arrow">→</span></button>
+        <button v-if="agent.is_placeholder" class="btn-disabled" @click="handleUse(agent)">
+          敬请期待 →
+        </button>
+        <button v-else class="btn-use" @click="handleUse(agent)">
+          立即使用 <span class="arrow">→</span>
+        </button>
       </div>
     </section>
 
@@ -176,7 +203,13 @@ const ICON_SVG: Record<string, string> = {
   display: flex;
   flex-direction: column;
   background: #f5f7fa;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -198,13 +231,13 @@ const ICON_SVG: Record<string, string> = {
   gap: 8px;
   font-size: 22px;
   font-weight: 700;
-  color: #1E88E5;
+  color: #1e88e5;
 }
 
 .logo-icon {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, #1E88E5, #1565C0);
+  background: linear-gradient(135deg, #1e88e5, #1565c0);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -241,7 +274,7 @@ const ICON_SVG: Record<string, string> = {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1E88E5, #7c3aed);
+  background: linear-gradient(135deg, #1e88e5, #7c3aed);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -261,8 +294,8 @@ const ICON_SVG: Record<string, string> = {
   transition: all 0.2s;
 
   &:hover {
-    border-color: #1E88E5;
-    color: #1E88E5;
+    border-color: #1e88e5;
+    color: #1e88e5;
   }
 }
 
@@ -280,7 +313,9 @@ const ICON_SVG: Record<string, string> = {
     color: #1f2a3e;
   }
 
-  .hl { color: #1E88E5; }
+  .hl {
+    color: #1e88e5;
+  }
 
   p {
     margin-top: 16px;
@@ -307,12 +342,16 @@ const ICON_SVG: Record<string, string> = {
   width: 28px;
   height: 28px;
   border: 3px solid #e5e7eb;
-  border-top-color: #1E88E5;
+  border-top-color: #1e88e5;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* ── Grid ── */
 .grid {
@@ -333,11 +372,13 @@ const ICON_SVG: Record<string, string> = {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.10);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -395,7 +436,7 @@ const ICON_SVG: Record<string, string> = {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: linear-gradient(135deg, #1E88E5, #1565C0);
+  background: linear-gradient(135deg, #1e88e5, #1565c0);
   color: #fff;
   border: none;
   border-radius: 40px;
@@ -406,12 +447,17 @@ const ICON_SVG: Record<string, string> = {
   align-self: flex-start;
 
   &:hover {
-    background: linear-gradient(135deg, #1565C0, #0d47a1);
+    background: linear-gradient(135deg, #1565c0, #0d47a1);
   }
 
-  &:hover .arrow { transform: translateX(2px); }
+  &:hover .arrow {
+    transform: translateX(2px);
+  }
 
-  .arrow { display: inline-block; transition: transform 0.2s; }
+  .arrow {
+    display: inline-block;
+    transition: transform 0.2s;
+  }
 }
 
 .btn-disabled {
@@ -439,12 +485,20 @@ const ICON_SVG: Record<string, string> = {
 
 /* ── Responsive ── */
 @media (max-width: 960px) {
-  .grid { grid-template-columns: repeat(2, 1fr); }
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 600px) {
-  .grid { grid-template-columns: 1fr; }
-  .hero h1 { font-size: 24px; }
-  .topbar { padding: 16px; }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .hero h1 {
+    font-size: 24px;
+  }
+  .topbar {
+    padding: 16px;
+  }
 }
 </style>

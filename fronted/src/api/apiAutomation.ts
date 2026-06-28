@@ -79,8 +79,12 @@ export interface ApiAutomationCaseQuery {
   exec_type?: string
 }
 
-export function getApiAutomationCases(params?: ApiAutomationCaseQuery): Promise<ApiAutomationCase[]> {
-  return get<PaginatedData<ApiAutomationCase>>('/api/v1/api-automation/cases', params).then(getPageItems)
+export function getApiAutomationCases(
+  params?: ApiAutomationCaseQuery,
+): Promise<ApiAutomationCase[]> {
+  return get<PaginatedData<ApiAutomationCase>>('/api/v1/api-automation/cases', params).then(
+    getPageItems,
+  )
 }
 
 export function getApiAutomationCase(caseId: number): Promise<ApiAutomationCase> {
@@ -94,7 +98,9 @@ export function getApiAutomationExecs(projectId?: number): Promise<ApiAutomation
   ).then(getPageItems)
 }
 
-export function createApiAutomationExec(payload: ApiAutomationExecPayload): Promise<AgentTask<ApiExecutionDetails>> {
+export function createApiAutomationExec(
+  payload: ApiAutomationExecPayload,
+): Promise<AgentTask<ApiExecutionDetails>> {
   return post<AgentTask<ApiExecutionDetails>>('/api/v1/api-automation/execs', payload)
 }
 

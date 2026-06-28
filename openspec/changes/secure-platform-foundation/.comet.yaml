@@ -1,0 +1,17 @@
+workflow: full
+phase: build
+design_doc: docs/superpowers/specs/2026-06-28-secure-platform-foundation-design.md
+plan: openspec/changes/secure-platform-foundation/build-plan.md
+base_ref: null
+build_mode: subagent-driven-development
+build_pause: null
+isolation: branch
+verify_mode: full
+verify_result: pending
+verification_report: null
+branch_status: pending
+created_at: 2026-06-28
+verified_at: null
+archived: false
+handoff_context: openspec/changes/secure-platform-foundation/.comet/handoff/design-context.json
+handoff_hash: 63c418080209c7156eea48f7b88c51a8f4d1e50ad891bf58f3cda73bb6f0cb6f

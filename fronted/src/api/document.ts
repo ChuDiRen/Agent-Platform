@@ -73,6 +73,8 @@ export function deleteDocument(documentId: number): Promise<RequirementDocument>
   return del<RequirementDocument>(`/api/v1/documents/${documentId}`)
 }
 
-export function reviewRequirement(data: RequirementReviewRequest): Promise<AgentTask<RequirementReviewResponse>> {
+export function reviewRequirement(
+  data: RequirementReviewRequest,
+): Promise<AgentTask<RequirementReviewResponse>> {
   return post<AgentTask<RequirementReviewResponse>>('/api/v1/documents/review', data)
 }

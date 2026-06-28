@@ -49,7 +49,7 @@ Agent-Platform/
 核心模式：
 - 新增实体：定义 model → schema → crud（继承 CRUDBase）→ endpoint → 在 `main.py` 注册路由
 - 数据库会话：通过 FastAPI 依赖注入（`get_db` 生成器）
-- 配置管理：`pydantic-settings` 保留类型校验，禁用 `.env`/环境变量读取
+- 配置管理：`pydantic-settings` 保留类型校验，代码默认值可被环境变量覆盖，但不读取 `.env` 和文件密钥
 
 ## 开发命令
 
@@ -111,13 +111,13 @@ Alembic 迁移：
 
 - 前端包管理器：pnpm
 - 后端使用 `venv/` 虚拟环境，`__init__.py` 均为空
-- 前后端配置均写入代码，不使用 `.env`/`.env.example`
+- 前后端默认配置写入代码；后端部署期可用环境变量覆盖敏感和运行时配置；不使用 `.env`/`.env.example`
 - Python 命令在 Windows 上使用 `.\venv\Scripts\` 前缀（非 `source venv/bin/activate`）
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Agent-Platform** (2946 symbols, 4773 relationships, 125 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **Agent-Platform** (2952 symbols, 4772 relationships, 125 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 

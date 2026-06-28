@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { useProjectContext } from '@/composables/useProjectContext'
 import { useAgentTaskRunner } from '@/composables/useAgentTaskRunner'
 import {
   applyGeneratedTestCases,
@@ -22,7 +23,8 @@ interface TreeNode extends RequirementModule {
   children?: TreeNode[]
 }
 
-const projectId = 1
+const { requireProjectId } = useProjectContext()
+const projectId = requireProjectId()
 const loading = ref(false)
 const applying = ref(false)
 const tableLoading = ref(false)
@@ -32,7 +34,11 @@ const selectedRows = ref<TestCase[]>([])
 const generatedVisible = ref(false)
 const processingVisible = ref(false)
 const editVisible = ref(false)
-const generatedTableRef = ref<ComponentPublicInstance & { toggleRowSelection: (row: TestCasePayload, selected?: boolean) => void }>()
+const generatedTableRef = ref<
+  ComponentPublicInstance & {
+    toggleRowSelection: (row: TestCasePayload, selected?: boolean) => void
+  }
+>()
 const generatedCases = ref<TestCasePayload[]>([])
 const selectedGenerated = ref<TestCasePayload[]>([])
 const testCases = ref<TestCase[]>([])
@@ -46,7 +52,9 @@ taskRunner.onFinished((task) => {
     processingVisible.value = false
     ElMessage.success(`AI生成完成，耗时${response.elapsed_ms}ms`)
     setTimeout(() => {
-      generatedCases.value.forEach((item) => generatedTableRef.value?.toggleRowSelection(item, true))
+      generatedCases.value.forEach((item) =>
+        generatedTableRef.value?.toggleRowSelection(item, true),
+      )
     })
   }
   if (task.status === 'failed') {
@@ -94,15 +102,11 @@ async function selectModule(module: RequirementModule) {
 }
 
 async function previewModule(module: RequirementModule) {
-  await ElMessageBox.alert(
-    `<h2>${module.title}</h2><p>${module.content}</p>`,
-    module.title,
-    {
-      dangerouslyUseHTMLString: true,
-      confirmButtonText: '关闭',
-      customClass: 'module-preview-dialog',
-    },
-  )
+  await ElMessageBox.alert(`<h2>${module.title}</h2><p>${module.content}</p>`, module.title, {
+    dangerouslyUseHTMLString: true,
+    confirmButtonText: '关闭',
+    customClass: 'module-preview-dialog',
+  })
 }
 
 async function runGenerate() {
@@ -125,7 +129,9 @@ async function runGenerate() {
       ElMessage.success(`AI生成完成，耗时${response.elapsed_ms}ms`)
       generatedVisible.value = true
       setTimeout(() => {
-        generatedCases.value.forEach((item) => generatedTableRef.value?.toggleRowSelection(item, true))
+        generatedCases.value.forEach((item) =>
+          generatedTableRef.value?.toggleRowSelection(item, true),
+        )
       })
     } else {
       ElMessage.success('任务已提交，正在后台执行')
@@ -190,7 +196,9 @@ async function saveEdit() {
     testCases.value = testCases.value.map((item) => (item.id === updated.id ? updated : item))
     ElMessage.success('用例已更新')
   } else {
-    const created = await applyGeneratedTestCases([{ ...editForm, project_id: projectId, module_id: selectedModuleId.value || undefined }])
+    const created = await applyGeneratedTestCases([
+      { ...editForm, project_id: projectId, module_id: selectedModuleId.value || undefined },
+    ])
     testCases.value = [...created, ...testCases.value]
     ElMessage.success('用例已新增')
   }
@@ -253,26 +261,26 @@ onMounted(loadCases)
       <aside class="sidebar">
         <el-empty v-if="!treeData.length" description="暂无需求模块，请先导入文档或生成模块" />
         <template v-else>
-        <div v-for="group in treeData" :key="group.id" class="tree-group">
-          <div class="tree-row group-row">
-            <span class="caret">⌄</span>
-            <el-checkbox />
-            <span class="node-title">{{ group.title }}</span>
-            <button @click="previewModule(group)">查看</button>
+          <div v-for="group in treeData" :key="group.id" class="tree-group">
+            <div class="tree-row group-row">
+              <span class="caret">⌄</span>
+              <el-checkbox />
+              <span class="node-title">{{ group.title }}</span>
+              <button @click="previewModule(group)">查看</button>
+            </div>
+            <div
+              v-for="child in group.children"
+              :key="child.id"
+              class="tree-row child-row"
+              :class="{ active: child.id === selectedModuleId }"
+              @click="selectModule(child)"
+            >
+              <span class="spacer" />
+              <el-checkbox :model-value="child.id === selectedModuleId" />
+              <span class="node-title">{{ child.title }}</span>
+              <button @click.stop="previewModule(child)">查看</button>
+            </div>
           </div>
-          <div
-            v-for="child in group.children"
-            :key="child.id"
-            class="tree-row child-row"
-            :class="{ active: child.id === selectedModuleId }"
-            @click="selectModule(child)"
-          >
-            <span class="spacer" />
-            <el-checkbox :model-value="child.id === selectedModuleId" />
-            <span class="node-title">{{ child.title }}</span>
-            <button @click.stop="previewModule(child)">查看</button>
-          </div>
-        </div>
         </template>
       </aside>
 
@@ -291,7 +299,9 @@ onMounted(loadCases)
           <div class="case-toolbar">
             <h1>当前：{{ currentTitle }}</h1>
             <div class="actions">
-              <el-button type="primary" :loading="loading" @click="runGenerate">AI测试用例生成</el-button>
+              <el-button type="primary" :loading="loading" @click="runGenerate"
+                >AI测试用例生成</el-button
+              >
               <el-button type="primary" plain @click="openCreateDialog">手动新增</el-button>
               <el-button type="danger" plain @click="removeSelected">批量删除</el-button>
               <el-button type="warning" @click="exportCases">导出</el-button>
@@ -335,17 +345,30 @@ onMounted(loadCases)
       </section>
     </main>
 
-    <el-dialog v-model="processingVisible" title="AI处理中..." width="760px" :close-on-click-modal="false">
+    <el-dialog
+      v-model="processingVisible"
+      title="AI处理中..."
+      width="760px"
+      :close-on-click-modal="false"
+    >
       <div class="processing">
         <div class="status-line">
           <span class="spinner" />
           <strong>AI正在处理中...</strong>
         </div>
-        <pre>{{ JSON.stringify(generatedCases.length ? generatedCases : [
-          { name: '正在分析选中模块...' },
-          { name: '正在拆解场景、边界和异常路径...' },
-          { name: '正在组织测试步骤和预期结果...' },
-        ], null, 2) }}</pre>
+        <pre>{{
+          JSON.stringify(
+            generatedCases.length
+              ? generatedCases
+              : [
+                  { name: '正在分析选中模块...' },
+                  { name: '正在拆解场景、边界和异常路径...' },
+                  { name: '正在组织测试步骤和预期结果...' },
+                ],
+            null,
+            2,
+          )
+        }}</pre>
         <el-progress :percentage="loading ? 72 : 100" />
       </div>
     </el-dialog>
@@ -376,7 +399,11 @@ onMounted(loadCases)
       </template>
     </el-dialog>
 
-    <el-dialog v-model="editVisible" :title="editingId ? '编辑测试用例' : '新增测试用例'" width="760px">
+    <el-dialog
+      v-model="editVisible"
+      :title="editingId ? '编辑测试用例' : '新增测试用例'"
+      width="760px"
+    >
       <el-form label-width="96px">
         <el-row :gutter="24">
           <el-col :span="13">
@@ -643,7 +670,9 @@ onMounted(loadCases)
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 1100px) {
@@ -658,7 +687,13 @@ onMounted(loadCases)
 }
 .case-page {
   background: #f5f7fa;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
 }
 
 .layout {

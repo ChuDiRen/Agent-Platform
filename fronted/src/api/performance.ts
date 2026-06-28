@@ -54,7 +54,9 @@ export interface PerformanceAnalyzeResponse {
   elapsed_ms: number
 }
 
-export function analyzePerformance(data: PerformanceAnalyzeRequest): Promise<AgentTask<PerformanceAnalyzeResponse>> {
+export function analyzePerformance(
+  data: PerformanceAnalyzeRequest,
+): Promise<AgentTask<PerformanceAnalyzeResponse>> {
   return post<AgentTask<PerformanceAnalyzeResponse>>('/api/v1/performance/analyze', data)
 }
 

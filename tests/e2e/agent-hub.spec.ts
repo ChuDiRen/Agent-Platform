@@ -14,8 +14,7 @@ let token = "";
 const createdAgentIds: number[] = [];
 
 test.beforeAll(async ({ request }) => {
-  await registerUser(request, EMAIL, PASSWORD, "E2E管理员");
-  token = await loginUser(request, EMAIL, PASSWORD);
+  token = await loginUser(request, "admin@qq.com", "admin123456");
 });
 
 test.afterEach(async ({ request }) => {
@@ -49,9 +48,9 @@ async function seedAgent(
 test.describe("AgentHub 页面结构", () => {
   test("显示主标题和副标题", async ({ page }) => {
     await page.goto("/agent-hub");
-    await expect(page.getByText("智能")).toBeVisible();
-    await expect(page.getByText("数字员工")).toBeVisible();
-    await expect(page.getByText("降本增效")).toBeVisible();
+    await expect(page.locator(".hero h1")).toContainText("智能");
+    await expect(page.locator(".hero h1")).toContainText("数字员工");
+    await expect(page.locator(".hero h1")).toContainText("降本增效");
     await expect(
       page.getByText("AI驱动的全链路测试工具平台"),
     ).toBeVisible();
@@ -59,7 +58,7 @@ test.describe("AgentHub 页面结构", () => {
 
   test("显示 logo 和管理员信息", async ({ page }) => {
     await page.goto("/agent-hub");
-    await expect(page.getByText("大熊AI智能体")).toBeVisible();
+    await expect(page.getByText("大熊AI智能体", { exact: true })).toBeVisible();
     await expect(page.getByText("E2E管理员")).toBeVisible();
   });
 
@@ -107,16 +106,16 @@ test.describe("AgentHub 智能体卡片（真实数据）", () => {
 });
 
 test.describe("AgentHub 交互", () => {
-  test("点击立即使用显示 ElMessage", async ({ page }) => {
+  test("点击立即使用进入真实业务页", async ({ page }) => {
     await page.goto("/agent-hub");
     await page.getByRole("button", { name: "立即使用" }).first().click();
-    await expect(page.locator(".el-message")).toContainText("功能开发中，即将开放");
+    await expect(page).not.toHaveURL(/\/agent-hub$/);
   });
 
   test("点击敬请期待显示 ElMessage", async ({ page }) => {
     await page.goto("/agent-hub");
     await page.getByRole("button", { name: "敬请期待" }).click();
-    await expect(page.locator(".el-message")).toContainText("敬请期待");
+    await expect(page.locator(".el-message").filter({ hasText: "敬请期待" }).last()).toBeVisible();
   });
 
   test("点击退出项目显示 ElMessage 并跳转", async ({ page }) => {

@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { useProjectContext } from '@/composables/useProjectContext'
 import { createAgentTask } from '@/api/agentTask'
 import {
   copyUiAutomationExec,
@@ -17,7 +18,8 @@ import {
 defineOptions({ name: 'UiAutomationAgent' })
 
 const router = useRouter()
-const projectId = 1
+const { requireProjectId } = useProjectContext()
+const projectId = requireProjectId()
 const caseLoading = ref(false)
 const execLoading = ref(false)
 const taskSubmitting = ref(false)
@@ -49,9 +51,7 @@ const taskForm = reactive({
   desc: '',
 })
 
-const moduleOptions = [
-  { label: '全部模块', value: '' },
-]
+const moduleOptions = [{ label: '全部模块', value: '' }]
 
 const selectedCaseNames = computed(() => selectedCases.value.map((item) => item.name).join('、'))
 
@@ -209,7 +209,12 @@ onMounted(async () => {
           </el-form-item>
           <el-form-item label="指定模块">
             <el-select v-model="filters.moduleId" placeholder="全部模块" clearable>
-              <el-option v-for="item in moduleOptions" :key="String(item.value)" :label="item.label" :value="item.value" />
+              <el-option
+                v-for="item in moduleOptions"
+                :key="String(item.value)"
+                :label="item.label"
+                :value="item.value"
+              />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -238,7 +243,7 @@ onMounted(async () => {
           v-loading="caseLoading"
           :data="cases"
           stripe
-          @selection-change="(rows: UiAutomationCase[]) => selectedCases = rows"
+          @selection-change="(rows: UiAutomationCase[]) => (selectedCases = rows)"
         >
           <el-table-column type="selection" width="48" />
           <el-table-column prop="id" label="ID" width="88" />
@@ -263,9 +268,9 @@ onMounted(async () => {
       <div v-if="currentCase" class="detail-block">
         <h3>{{ currentCase.name }}</h3>
         <div class="info-grid">
-          <span>页面路径</span><strong>{{ currentCase.page_url }}</strong>
-          <span>执行端</span><strong>{{ currentCase.viewport }}</strong>
-          <span>预期结果</span><strong>{{ currentCase.expected }}</strong>
+          <span>页面路径</span><strong>{{ currentCase.page_url }}</strong> <span>执行端</span
+          ><strong>{{ currentCase.viewport }}</strong> <span>预期结果</span
+          ><strong>{{ currentCase.expected }}</strong>
         </div>
         <el-table :data="currentCase.steps" border>
           <el-table-column prop="action" label="动作" width="120" />
@@ -326,7 +331,7 @@ onMounted(async () => {
         v-loading="execLoading"
         :data="execs"
         stripe
-        @selection-change="(rows: UiAutomationExec[]) => selectedExecs = rows"
+        @selection-change="(rows: UiAutomationExec[]) => (selectedExecs = rows)"
       >
         <el-table-column type="selection" width="48" />
         <el-table-column prop="id" label="ID" width="80" />
@@ -351,17 +356,31 @@ onMounted(async () => {
     <el-dialog v-model="reportVisible" title="AI UI执行报告" width="960px">
       <div v-if="currentReport?.details" class="report">
         <div class="summary">
-          <strong>成功{{ currentReport.details.summary.success }}个用例，失败{{ currentReport.details.summary.failed }}个用例</strong>
+          <strong
+            >成功{{ currentReport.details.summary.success }}个用例，失败{{
+              currentReport.details.summary.failed
+            }}个用例</strong
+          >
           <span>共 {{ currentReport.details.summary.total }} 条 · {{ currentReport.name }}</span>
         </div>
-        <div v-for="result in currentReport.details.results" :key="result.case_id" class="result-card">
+        <div
+          v-for="result in currentReport.details.results"
+          :key="result.case_id"
+          class="result-card"
+        >
           <div class="result-head">
             <h3>{{ result.case_name }}</h3>
             <el-tag :type="resultType(result)">{{ result.status }}</el-tag>
           </div>
           <div class="compare-grid">
-            <div><strong>预期结果</strong><p>{{ result.expected }}</p></div>
-            <div><strong>AI视觉执行记录</strong><p>{{ result.ai_record }}</p></div>
+            <div>
+              <strong>预期结果</strong>
+              <p>{{ result.expected }}</p>
+            </div>
+            <div>
+              <strong>AI视觉执行记录</strong>
+              <p>{{ result.ai_record }}</p>
+            </div>
           </div>
           <div class="artifact-line">
             <span>页面：{{ result.page_url }}</span>
@@ -617,7 +636,13 @@ onMounted(async () => {
 }
 .ui-page {
   background: #f5f7fa;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
 }
 
 .workspace {

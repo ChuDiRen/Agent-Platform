@@ -1,6 +1,7 @@
 import { get, post } from './http'
 
-export type AgentTaskStatus = 'created' | 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled'
+export type AgentTaskStatus =
+  'created' | 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled'
 
 export interface AgentTask<TOutput = unknown> {
   id: number
@@ -67,11 +68,15 @@ export interface AgentTaskQuery {
   limit?: number
 }
 
-export function createAgentTask<TOutput = unknown>(data: AgentTaskCreateRequest): Promise<AgentTask<TOutput>> {
+export function createAgentTask<TOutput = unknown>(
+  data: AgentTaskCreateRequest,
+): Promise<AgentTask<TOutput>> {
   return post<AgentTask<TOutput>>('/api/v1/agent-tasks/', data)
 }
 
-export function getAgentTasks<TOutput = unknown>(params?: AgentTaskQuery): Promise<AgentTaskListResponse<TOutput>> {
+export function getAgentTasks<TOutput = unknown>(
+  params?: AgentTaskQuery,
+): Promise<AgentTaskListResponse<TOutput>> {
   return get<AgentTaskListResponse<TOutput>>('/api/v1/agent-tasks/', params)
 }
 

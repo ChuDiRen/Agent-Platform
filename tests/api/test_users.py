@@ -125,7 +125,7 @@ class TestLogin:
         })
         assert resp.json()["code"] == 401
 
-    def test_inactive_user_rejected(self, client):
+    def test_inactive_user_rejected(self, client, admin_headers):
         """is_active=False 的用户应无法登录（crud/user.py:29 检查）。"""
         # 注册
         client.post("/api/v1/users/", json={
@@ -133,9 +133,9 @@ class TestLogin:
             "password": "Pass123!",
         })
         # 获取用户 ID 并禁用
-        users = client.get("/api/v1/users/").json()["data"]
+        users = client.get("/api/v1/users/", headers=admin_headers).json()["data"]
         user_id = next(u["id"] for u in users if u["email"] == "inactive@company.com")
-        client.put(f"/api/v1/users/{user_id}", json={
+        client.put(f"/api/v1/users/{user_id}", headers=admin_headers, json={
             "email": "inactive@company.com",
             "is_active": False,
         })
@@ -180,33 +180,35 @@ class TestLogin:
 class TestReadUsers:
     """用户列表测试。覆盖 users.py:read_users 的分页逻辑。"""
 
-    def test_empty_list(self, client):
-        """无用户时应返回空列表。"""
-        assert client.get("/api/v1/users/").json()["data"] == []
+    def test_empty_list(self, unauthenticated_client, admin_headers):
+        """只有认证管理员时不应出现普通用户。"""
+        users = unauthenticated_client.get("/api/v1/users/", headers=admin_headers).json()["data"]
+        assert [item for item in users if not item["is_superuser"]] == []
 
-    def test_returns_all_users(self, client):
-        """应返回所有已注册用户。"""
+    def test_returns_all_users(self, unauthenticated_client, admin_headers):
+        """应返回所有已注册普通用户。"""
         for i in range(3):
-            client.post("/api/v1/users/", json={
+            unauthenticated_client.post("/api/v1/users/", json={
                 "email": f"user{i}@company.com",
                 "password": "Pass123!",
             })
-        resp = client.get("/api/v1/users/")
-        assert len(resp.json()["data"]) == 3
+        resp = unauthenticated_client.get("/api/v1/users/", headers=admin_headers)
+        normal_users = [item for item in resp.json()["data"] if item["email"].startswith("user")]
+        assert len(normal_users) == 3
 
     @pytest.mark.parametrize("params,expected", [
-        ({"skip": 2}, 3),       # 跳过前 2 条
+        ({"skip": 2}, 4),       # 跳过管理员和第一条普通用户
         ({"limit": 2}, 2),      # 限制返回 2 条
         ({"skip": 1, "limit": 2}, 2),  # 组合
     ], ids=["skip", "limit", "skip+limit"])
-    def test_pagination(self, client, params, expected):
+    def test_pagination(self, unauthenticated_client, admin_headers, params, expected):
         """skip/limit 分页应正确工作（users.py:28 get_multi 参数）。"""
         for i in range(5):
-            client.post("/api/v1/users/", json={
+            unauthenticated_client.post("/api/v1/users/", json={
                 "email": f"page{i}@company.com",
                 "password": "Pass123!",
             })
-        resp = client.get("/api/v1/users/", params=params)
+        resp = unauthenticated_client.get("/api/v1/users/", headers=admin_headers, params=params)
         assert len(resp.json()["data"]) == expected
 
 
@@ -218,7 +220,7 @@ class TestReadUsers:
 class TestReadUser:
     """获取单个用户测试。覆盖 users.py:read_user。"""
 
-    def test_success(self, client):
+    def test_success(self, client, login_headers):
         """按 ID 获取已存在的用户应成功。"""
         create_resp = client.post("/api/v1/users/", json={
             "email": "single@company.com",
@@ -226,15 +228,16 @@ class TestReadUser:
             "full_name": "单个用户",
         })
         user_id = create_resp.json()["data"]["id"]
+        headers = login_headers("single@company.com", "Pass123!")
 
-        resp = client.get(f"/api/v1/users/{user_id}")
+        resp = client.get(f"/api/v1/users/{user_id}", headers=headers)
         assert resp.status_code == 200
         assert resp.json()["data"]["email"] == "single@company.com"
         assert resp.json()["data"]["full_name"] == "单个用户"
 
-    def test_not_found(self, client):
+    def test_not_found(self, client, auth_headers):
         """不存在的用户应返回 404（users.py:22-23）。"""
-        resp = client.get("/api/v1/users/99999")
+        resp = client.get("/api/v1/users/99999", headers=auth_headers)
         assert resp.json()["code"] == 404
         assert resp.json()["message"] == "User not found"
 
@@ -247,7 +250,7 @@ class TestReadUser:
 class TestUpdateUser:
     """更新用户测试。覆盖 users.py:update_user + base.py:update（exclude_unset=True）。"""
 
-    def test_update_full_name(self, client):
+    def test_update_full_name(self, client, login_headers):
         """更新 full_name 应成功。"""
         create_resp = client.post("/api/v1/users/", json={
             "email": "update@company.com",
@@ -255,29 +258,31 @@ class TestUpdateUser:
             "full_name": "旧名字",
         })
         user_id = create_resp.json()["data"]["id"]
+        headers = login_headers("update@company.com", "Pass123!")
 
-        resp = client.put(f"/api/v1/users/{user_id}", json={
+        resp = client.put(f"/api/v1/users/{user_id}", headers=headers, json={
             "email": "update@company.com",
             "full_name": "新名字",
         })
         assert resp.status_code == 200
         assert resp.json()["data"]["full_name"] == "新名字"
 
-    def test_update_email(self, client):
+    def test_update_email(self, client, login_headers):
         """更新 email 应成功。"""
         create_resp = client.post("/api/v1/users/", json={
             "email": "old@company.com",
             "password": "Pass123!",
         })
         user_id = create_resp.json()["data"]["id"]
+        headers = login_headers("old@company.com", "Pass123!")
 
-        resp = client.put(f"/api/v1/users/{user_id}", json={
+        resp = client.put(f"/api/v1/users/{user_id}", headers=headers, json={
             "email": "new@company.com",
         })
         assert resp.status_code == 200
         assert resp.json()["data"]["email"] == "new@company.com"
 
-    def test_partial_update_preserves_unset_fields(self, client):
+    def test_partial_update_preserves_unset_fields(self, client, login_headers):
         """部分更新只修改传入字段，其他不变（base.py:36 exclude_unset=True）。"""
         create_resp = client.post("/api/v1/users/", json={
             "email": "partial@company.com",
@@ -285,23 +290,24 @@ class TestUpdateUser:
             "full_name": "保持不变",
         })
         user_id = create_resp.json()["data"]["id"]
+        headers = login_headers("partial@company.com", "Pass123!")
 
         # 只传 email，不传 full_name
-        resp = client.put(f"/api/v1/users/{user_id}", json={
+        resp = client.put(f"/api/v1/users/{user_id}", headers=headers, json={
             "email": "changed@company.com",
         })
         assert resp.status_code == 200
         assert resp.json()["data"]["email"] == "changed@company.com"
         assert resp.json()["data"]["full_name"] == "保持不变"
 
-    def test_not_found(self, client):
+    def test_not_found(self, client, auth_headers):
         """更新不存在的用户应返回 404（users.py:35-36）。"""
-        resp = client.put("/api/v1/users/99999", json={
+        resp = client.put("/api/v1/users/99999", headers=auth_headers, json={
             "email": "ghost@company.com",
         })
         assert resp.json()["code"] == 404
 
-    def test_duplicate_email_rejected(self, client):
+    def test_duplicate_email_rejected(self, client, login_headers):
         """更新邮箱为已存在邮箱应返回 400（users.py:35-38 唯一性检查）。"""
         client.post("/api/v1/users/", json={
             "email": "taken@company.com",
@@ -312,8 +318,9 @@ class TestUpdateUser:
             "password": "Pass123!",
         })
         user_id = create_resp.json()["data"]["id"]
+        headers = login_headers("updater@company.com", "Pass123!")
 
-        resp = client.put(f"/api/v1/users/{user_id}", json={
+        resp = client.put(f"/api/v1/users/{user_id}", headers=headers, json={
             "email": "taken@company.com",
         })
         assert resp.json()["code"] == 400
@@ -328,7 +335,7 @@ class TestUpdateUser:
 class TestDeleteUser:
     """删除用户测试。覆盖 users.py:delete_user。"""
 
-    def test_success(self, client):
+    def test_success(self, client, admin_headers):
         """删除已存在的用户应返回被删用户信息。"""
         create_resp = client.post("/api/v1/users/", json={
             "email": "delete@company.com",
@@ -336,16 +343,16 @@ class TestDeleteUser:
         })
         user_id = create_resp.json()["data"]["id"]
 
-        resp = client.delete(f"/api/v1/users/{user_id}")
+        resp = client.delete(f"/api/v1/users/{user_id}", headers=admin_headers)
         assert resp.status_code == 200
         assert resp.json()["data"]["email"] == "delete@company.com"
 
         # 确认已删除
-        assert client.get(f"/api/v1/users/{user_id}").json()["code"] == 404
+        assert client.get(f"/api/v1/users/{user_id}", headers=admin_headers).json()["code"] == 404
 
-    def test_not_found(self, client):
+    def test_not_found(self, client, admin_headers):
         """删除不存在的用户应返回 404（users.py:42-43）。"""
-        resp = client.delete("/api/v1/users/99999")
+        resp = client.delete("/api/v1/users/99999", headers=admin_headers)
         assert resp.json()["code"] == 404
 
 
@@ -358,7 +365,7 @@ class TestDeleteUser:
 class TestCRUDLifecycle:
     """注册 → 查询 → 登录 → 更新 → 删除 完整流程。"""
 
-    def test_full_lifecycle(self, client):
+    def test_full_lifecycle(self, client, login_headers, admin_headers):
         """验证所有接口串联工作。"""
         # 1. 注册
         create_resp = client.post("/api/v1/users/", json={
@@ -370,7 +377,8 @@ class TestCRUDLifecycle:
         user_id = create_resp.json()["data"]["id"]
 
         # 2. 查询
-        get_resp = client.get(f"/api/v1/users/{user_id}")
+        user_headers = login_headers("lifecycle@company.com", "LifecyclePass123!")
+        get_resp = client.get(f"/api/v1/users/{user_id}", headers=user_headers)
         assert get_resp.json()["data"]["email"] == "lifecycle@company.com"
 
         # 3. 登录
@@ -382,12 +390,12 @@ class TestCRUDLifecycle:
         assert "access_token" in login_resp.json()["data"]
 
         # 4. 更新
-        update_resp = client.put(f"/api/v1/users/{user_id}", json={
+        update_resp = client.put(f"/api/v1/users/{user_id}", headers=user_headers, json={
             "email": "lifecycle@company.com",
             "full_name": "更新后",
         })
         assert update_resp.json()["data"]["full_name"] == "更新后"
 
         # 5. 删除
-        assert client.delete(f"/api/v1/users/{user_id}").status_code == 200
-        assert client.get(f"/api/v1/users/{user_id}").json()["code"] == 404
+        assert client.delete(f"/api/v1/users/{user_id}", headers=admin_headers).status_code == 200
+        assert client.get(f"/api/v1/users/{user_id}", headers=admin_headers).json()["code"] == 404

@@ -40,7 +40,9 @@ const statusOptions: Array<{ label: string; value: AgentTaskStatus | '' }> = [
   { label: '已取消', value: 'cancelled' },
 ]
 
-const outputPreview = computed(() => JSON.stringify(selected.value?.result_payload?.output ?? {}, null, 2))
+const outputPreview = computed(() =>
+  JSON.stringify(selected.value?.result_payload?.output ?? {}, null, 2),
+)
 
 function statusText(status: AgentTaskStatus) {
   return {
@@ -118,7 +120,8 @@ async function loadFromRoute() {
 
 function startAutoRefresh() {
   timer = window.setInterval(() => {
-    const hasActiveTask = tasks.value.some((item) => ACTIVE_STATUSES.has(item.status)) ||
+    const hasActiveTask =
+      tasks.value.some((item) => ACTIVE_STATUSES.has(item.status)) ||
       (selected.value ? ACTIVE_STATUSES.has(selected.value.status) : false)
     if (hasActiveTask) {
       refreshCurrent().catch(() => undefined)
@@ -158,7 +161,12 @@ onBeforeUnmount(() => {
       <section class="task-list">
         <div class="toolbar">
           <el-select v-model="statusFilter" size="small" class="status-select" @change="loadTasks">
-            <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <el-option
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </el-select>
           <button class="ghost-btn" :disabled="loading" @click="refreshCurrent">刷新</button>
         </div>
@@ -172,8 +180,12 @@ onBeforeUnmount(() => {
           @click="selectTask(task)"
         >
           <span class="task-main">#{{ task.id }} · {{ task.agent_key }}</span>
-          <span class="task-status" :class="statusClass(task.status)">{{ statusText(task.status) }}</span>
-          <span class="task-time">{{ new Date(task.created_at).toLocaleString('zh-CN', { hour12: false }) }}</span>
+          <span class="task-status" :class="statusClass(task.status)">{{
+            statusText(task.status)
+          }}</span>
+          <span class="task-time">{{
+            new Date(task.created_at).toLocaleString('zh-CN', { hour12: false })
+          }}</span>
         </button>
       </section>
 
@@ -185,8 +197,20 @@ onBeforeUnmount(() => {
               <p>{{ selected.agent_key }} · {{ statusText(selected.status) }}</p>
             </div>
             <div class="actions">
-              <button v-if="selected.status === 'failed'" class="primary-btn" @click="retrySelected">重试</button>
-              <button v-if="['created', 'queued', 'running'].includes(selected.status)" class="danger-btn" @click="cancelSelected">取消</button>
+              <button
+                v-if="selected.status === 'failed'"
+                class="primary-btn"
+                @click="retrySelected"
+              >
+                重试
+              </button>
+              <button
+                v-if="['created', 'queued', 'running'].includes(selected.status)"
+                class="danger-btn"
+                @click="cancelSelected"
+              >
+                取消
+              </button>
             </div>
           </div>
 
@@ -199,14 +223,20 @@ onBeforeUnmount(() => {
               <div v-else-if="!events.length" class="muted">暂无事件</div>
               <div v-for="event in events" :key="event.id" class="event-row">
                 <span>{{ event.message }}</span>
-                <b v-if="event.progress !== null && event.progress !== undefined">{{ event.progress }}%</b>
+                <b v-if="event.progress !== null && event.progress !== undefined"
+                  >{{ event.progress }}%</b
+                >
               </div>
             </article>
 
             <article>
               <h2>产物</h2>
               <div v-if="!artifacts.length" class="muted">暂无产物</div>
-              <div v-for="artifact in artifacts" :key="artifact.id || artifact.storage_path" class="artifact-row">
+              <div
+                v-for="artifact in artifacts"
+                :key="artifact.id || artifact.storage_path"
+                class="artifact-row"
+              >
                 <span>{{ artifact.name }}</span>
                 <code>{{ artifact.storage_path }}</code>
               </div>
@@ -311,10 +341,22 @@ article {
   color: #4338ca;
 }
 
-.status-succeeded { background: #ecfdf3; color: #027a48; }
-.status-failed { background: #fef3f2; color: #b42318; }
-.status-cancelled { background: #f2f4f7; color: #475467; }
-.status-running { background: #eff8ff; color: #175cd3; }
+.status-succeeded {
+  background: #ecfdf3;
+  color: #027a48;
+}
+.status-failed {
+  background: #fef3f2;
+  color: #b42318;
+}
+.status-cancelled {
+  background: #f2f4f7;
+  color: #475467;
+}
+.status-running {
+  background: #eff8ff;
+  color: #175cd3;
+}
 
 .task-detail {
   min-width: 0;

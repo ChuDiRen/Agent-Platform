@@ -10,7 +10,9 @@ test.describe("登录页面", () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
+    await page.context().clearCookies();
+    await page.addInitScript(() => localStorage.clear());
+    await page.goto("/login", { waitUntil: "domcontentloaded" });
   });
 
   test.describe("页面结构", () => {
@@ -61,7 +63,7 @@ test.describe("登录页面", () => {
       await page.getByPlaceholder("邮箱地址").fill("wrong@test.com");
       await page.getByPlaceholder("密码").fill("wrongpassword");
       await page.getByRole("button", { name: "登录" }).click();
-      await expect(page.locator(".el-message--error, .el-message")).toBeVisible();
+      await expect(page.locator(".el-message--error, .el-message").last()).toBeVisible();
     });
   });
 

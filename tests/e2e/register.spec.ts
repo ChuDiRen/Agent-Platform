@@ -2,12 +2,14 @@ import { test, expect } from "@playwright/test";
 
 test.describe("注册页面", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/register");
+    await page.context().clearCookies();
+    await page.addInitScript(() => localStorage.clear());
+    await page.goto("/register", { waitUntil: "domcontentloaded" });
   });
 
   test.describe("页面渲染", () => {
     test("显示品牌面板和表单", async ({ page }) => {
-      await expect(page.getByText("Agent Platform")).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Agent Platform" })).toBeVisible();
       await expect(page.getByText("加入我们，开启智能之旅")).toBeVisible();
       await expect(page.getByText("创建账号")).toBeVisible();
       await expect(page.getByText("注册以开始使用 Agent Platform")).toBeVisible();
@@ -66,12 +68,16 @@ test.describe("注册页面", () => {
       await page.route("**/api/v1/users/", async (route) => {
         if (route.request().method() === "POST") {
           await route.fulfill({
-            status: 201,
+            status: 200,
             contentType: "application/json",
             body: JSON.stringify({
-              id: 2,
-              email: "new@example.com",
-              full_name: "新用户",
+              code: 0,
+              message: "success",
+              data: {
+                id: 2,
+                email: "new@example.com",
+                full_name: "新用户",
+              },
             }),
           });
         } else {
@@ -94,9 +100,9 @@ test.describe("注册页面", () => {
       await page.route("**/api/v1/users/", async (route) => {
         if (route.request().method() === "POST") {
           await route.fulfill({
-            status: 400,
+            status: 200,
             contentType: "application/json",
-            body: JSON.stringify({ detail: "该邮箱已被注册" }),
+            body: JSON.stringify({ code: 400, message: "该邮箱已被注册", data: null }),
           });
         } else {
           await route.continue();
@@ -116,9 +122,13 @@ test.describe("注册页面", () => {
         if (route.request().method() === "POST") {
           await new Promise((r) => setTimeout(r, 1000));
           await route.fulfill({
-            status: 201,
+            status: 200,
             contentType: "application/json",
-            body: JSON.stringify({ id: 2, email: "new@example.com" }),
+            body: JSON.stringify({
+              code: 0,
+              message: "success",
+              data: { id: 2, email: "new@example.com" },
+            }),
           });
         } else {
           await route.continue();

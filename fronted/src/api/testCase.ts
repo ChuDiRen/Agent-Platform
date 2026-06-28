@@ -42,7 +42,10 @@ export interface TestCaseGenerateResponse {
   elapsed_ms: number
 }
 
-export function getTestCases(params?: { project_id?: number; module_id?: number }): Promise<TestCase[]> {
+export function getTestCases(params?: {
+  project_id?: number
+  module_id?: number
+}): Promise<TestCase[]> {
   return get<PaginatedData<TestCase>>('/api/v1/test-cases/', params).then(getPageItems)
 }
 
@@ -58,7 +61,9 @@ export function deleteTestCase(id: number): Promise<TestCase> {
   return del<TestCase>(`/api/v1/test-cases/${id}`)
 }
 
-export function generateTestCases(data: TestCaseGenerateRequest): Promise<AgentTask<TestCaseGenerateResponse>> {
+export function generateTestCases(
+  data: TestCaseGenerateRequest,
+): Promise<AgentTask<TestCaseGenerateResponse>> {
   return post<AgentTask<TestCaseGenerateResponse>>('/api/v1/test-cases/generate', data)
 }
 

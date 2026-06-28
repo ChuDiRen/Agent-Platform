@@ -1,7 +1,8 @@
 import json
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
+from app.api.deps import get_current_active_user
 from app.core.config import settings
 from app.core.security import get_password_hash
 from app.db.base import Base
@@ -28,27 +29,29 @@ app = FastAPI(
 )
 
 # CORS
-if settings.BACKEND_CORS_ORIGINS:
+if settings.cors_origins:
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.BACKEND_CORS_ORIGINS,
+        allow_origins=settings.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
 # 注册路由
+protected_dependencies = [Depends(get_current_active_user)]
+
 app.include_router(users.router, prefix=f"{settings.API_V1_PREFIX}/users", tags=["users"])
-app.include_router(projects.router, prefix=f"{settings.API_V1_PREFIX}/projects", tags=["projects"])
-app.include_router(agents.router, prefix=f"{settings.API_V1_PREFIX}/agents", tags=["agents"])
-app.include_router(test_data.router, prefix=f"{settings.API_V1_PREFIX}/test-data", tags=["test-data"])
-app.include_router(test_cases.router, prefix=f"{settings.API_V1_PREFIX}/test-cases", tags=["test-cases"])
-app.include_router(documents.router, prefix=f"{settings.API_V1_PREFIX}/documents", tags=["documents"])
-app.include_router(api_documents.router, prefix=f"{settings.API_V1_PREFIX}/api-documents", tags=["api-documents"])
-app.include_router(api_automation.router, prefix=f"{settings.API_V1_PREFIX}/api-automation", tags=["api-automation"])
-app.include_router(ui_automation.router, prefix=f"{settings.API_V1_PREFIX}/ui-automation", tags=["ui-automation"])
-app.include_router(performance.router, prefix=f"{settings.API_V1_PREFIX}/performance", tags=["performance"])
-app.include_router(agent_tasks.router, prefix=f"{settings.API_V1_PREFIX}/agent-tasks", tags=["agent-tasks"])
+app.include_router(projects.router, prefix=f"{settings.API_V1_PREFIX}/projects", tags=["projects"], dependencies=protected_dependencies)
+app.include_router(agents.router, prefix=f"{settings.API_V1_PREFIX}/agents", tags=["agents"], dependencies=protected_dependencies)
+app.include_router(test_data.router, prefix=f"{settings.API_V1_PREFIX}/test-data", tags=["test-data"], dependencies=protected_dependencies)
+app.include_router(test_cases.router, prefix=f"{settings.API_V1_PREFIX}/test-cases", tags=["test-cases"], dependencies=protected_dependencies)
+app.include_router(documents.router, prefix=f"{settings.API_V1_PREFIX}/documents", tags=["documents"], dependencies=protected_dependencies)
+app.include_router(api_documents.router, prefix=f"{settings.API_V1_PREFIX}/api-documents", tags=["api-documents"], dependencies=protected_dependencies)
+app.include_router(api_automation.router, prefix=f"{settings.API_V1_PREFIX}/api-automation", tags=["api-automation"], dependencies=protected_dependencies)
+app.include_router(ui_automation.router, prefix=f"{settings.API_V1_PREFIX}/ui-automation", tags=["ui-automation"], dependencies=protected_dependencies)
+app.include_router(performance.router, prefix=f"{settings.API_V1_PREFIX}/performance", tags=["performance"], dependencies=protected_dependencies)
+app.include_router(agent_tasks.router, prefix=f"{settings.API_V1_PREFIX}/agent-tasks", tags=["agent-tasks"], dependencies=protected_dependencies)
 
 
 SEED_AGENTS = [

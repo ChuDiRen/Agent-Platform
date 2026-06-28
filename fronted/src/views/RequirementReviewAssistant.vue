@@ -2,12 +2,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
+import { useProjectContext } from '@/composables/useProjectContext'
 import { useAgentTaskRunner } from '@/composables/useAgentTaskRunner'
 import {
   createDocument,
   deleteDocument,
   getDocuments,
-  reviewRequirement,
   updateDocument,
   type RequirementReviewResponse,
   type RequirementDocument,
@@ -16,7 +16,8 @@ import {
 
 defineOptions({ name: 'RequirementReviewAssistant' })
 
-const projectId = 1
+const { requireProjectId } = useProjectContext()
+const projectId = requireProjectId()
 const documents = ref<RequirementDocument[]>([])
 const selectedId = ref<number | null>(null)
 const editorContent = ref('')
@@ -38,7 +39,9 @@ taskRunner.onFinished((task) => {
   }
 })
 
-const selectedDocument = computed(() => documents.value.find((item) => item.id === selectedId.value) || null)
+const selectedDocument = computed(
+  () => documents.value.find((item) => item.id === selectedId.value) || null,
+)
 const roots = computed(() => documents.value.filter((item) => !item.parent_id))
 
 function childrenOf(parentId: number) {
@@ -47,7 +50,9 @@ function childrenOf(parentId: number) {
 
 function pathText(document: RequirementDocument | null) {
   if (!document) return '当前查看：未选择文档'
-  const parent = document.parent_id ? documents.value.find((item) => item.id === document.parent_id) : null
+  const parent = document.parent_id
+    ? documents.value.find((item) => item.id === document.parent_id)
+    : null
   return `当前查看：${parent ? `${parent.name} - ` : ''}${document.name}`
 }
 
@@ -96,12 +101,14 @@ async function addChild(parent: RequirementDocument) {
 }
 
 async function importDocument() {
-  const parent = roots.value.find((item) => item.is_directory) || await createDocument({
-    project_id: projectId,
-    name: '需求文档',
-    title: '需求文档',
-    is_directory: true,
-  })
+  const parent =
+    roots.value.find((item) => item.is_directory) ||
+    (await createDocument({
+      project_id: projectId,
+      name: '需求文档',
+      title: '需求文档',
+      is_directory: true,
+    }))
   if (!documents.value.some((item) => item.id === parent.id)) documents.value.push(parent)
   const created = await createDocument({
     project_id: projectId,
@@ -131,7 +138,9 @@ async function saveCurrent() {
 
 async function removeDocument(document: RequirementDocument) {
   await deleteDocument(document.id)
-  documents.value = documents.value.filter((item) => item.id !== document.id && item.parent_id !== document.id)
+  documents.value = documents.value.filter(
+    (item) => item.id !== document.id && item.parent_id !== document.id,
+  )
   if (selectedId.value === document.id) {
     selectedId.value = null
     editorContent.value = ''
@@ -192,7 +201,11 @@ onMounted(async () => {
 
         <div class="tree">
           <div v-for="root in roots" :key="root.id" class="tree-group">
-            <div class="tree-row" :class="{ active: root.id === selectedId }" @click="selectDocument(root)">
+            <div
+              class="tree-row"
+              :class="{ active: root.id === selectedId }"
+              @click="selectDocument(root)"
+            >
               <span class="caret">⌄</span>
               <input type="checkbox" />
               <span class="node-name">{{ root.name }}</span>
@@ -229,8 +242,9 @@ onMounted(async () => {
         <div class="editor-shell">
           <div class="toolbar">
             <span>☺</span><span>H</span><span>B</span><span>I</span><span>S</span><span>🔗</span>
-            <span>☷</span><span>☑</span><span>▷</span><span>—</span><span>&lt;/&gt;</span><span>↕</span>
-            <span>↧</span><span>☁</span><span>▦</span><span>↗</span><span>✎</span><span>…</span>
+            <span>☷</span><span>☑</span><span>▷</span><span>—</span><span>&lt;/&gt;</span
+            ><span>↕</span> <span>↧</span><span>☁</span><span>▦</span><span>↗</span><span>✎</span
+            ><span>…</span>
           </div>
           <textarea
             v-model="editorContent"
@@ -241,7 +255,11 @@ onMounted(async () => {
       </section>
     </main>
 
-    <el-dialog v-model="reviewVisible" :title="`AI 评审 - ${selectedDocument?.name || '需求'}`" width="760px">
+    <el-dialog
+      v-model="reviewVisible"
+      :title="`AI 评审 - ${selectedDocument?.name || '需求'}`"
+      width="760px"
+    >
       <div class="tabs">
         <span class="tab active">需求评审</span>
         <span class="tab">采纳记录</span>
@@ -251,7 +269,10 @@ onMounted(async () => {
       <template v-else>
         <div v-if="!findings.length" class="empty-review">暂无评审结果，请点击立即开始</div>
         <div v-for="(finding, index) in findings" :key="finding.id" class="finding">
-          <div class="finding-title" @click="expandedFinding = expandedFinding === finding.id ? null : finding.id">
+          <div
+            class="finding-title"
+            @click="expandedFinding = expandedFinding === finding.id ? null : finding.id"
+          >
             <el-checkbox v-model="finding.adopted" />
             <span>{{ index + 1 }}. {{ finding.title }}</span>
             <b>{{ expandedFinding === finding.id ? '⌄' : '›' }}</b>
@@ -268,7 +289,9 @@ onMounted(async () => {
       />
 
       <template #footer>
-        <button class="blue-btn wide" :disabled="reviewing" @click="runReview">立即开始 AI 需求评审</button>
+        <button class="blue-btn wide" :disabled="reviewing" @click="runReview">
+          立即开始 AI 需求评审
+        </button>
         <button class="green-btn" @click="adoptSelected">采纳</button>
         <button class="plain-btn" @click="saveCurrent">保存</button>
       </template>
@@ -546,7 +569,13 @@ footer {
 .review-page {
   min-height: 100vh;
   background: #f5f7fa;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
   overflow-x: hidden;
 }
 
@@ -624,7 +653,7 @@ footer {
   padding: 12px 18px;
   border-radius: 18px;
   background: #eef6ff;
-  color: #1E88E5;
+  color: #1e88e5;
 }
 
 .workspace-title {
