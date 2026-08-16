@@ -39,8 +39,9 @@ def read_performance_records(
 ):
     items = performance_crud.get_multi_by_project(db, project_id=project_id, skip=skip, limit=limit)
     data = [_performance_to_out(i).model_dump() for i in items]
+    total = performance_crud.count_by_project(db, project_id=project_id)
     page = skip // limit + 1 if limit > 0 else 1
-    return paginated(items=data, total=len(data), page=page, page_size=limit)
+    return paginated(items=data, total=total, page=page, page_size=limit)
 
 
 @router.post("/analyze")

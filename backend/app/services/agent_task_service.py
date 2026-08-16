@@ -51,6 +51,7 @@ class AgentTaskService:
         agent_key: str | None = None,
         status: str | None = None,
         project_id: int | None = None,
+        user_id: int | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[list[AgentTask], int]:
@@ -61,6 +62,8 @@ class AgentTaskService:
             query = query.filter(AgentTask.status == status)
         if project_id is not None:
             query = query.filter(AgentTask.project_id == project_id)
+        if user_id is not None:
+            query = query.filter(AgentTask.user_id == user_id)
         total = query.count()
         items = query.order_by(AgentTask.id.desc()).offset(skip).limit(limit).all()
         return items, total
@@ -84,6 +87,36 @@ class AgentTaskService:
         self.db.commit()
         self.db.refresh(task)
         return task
+
+    def try_start_task(self, task: AgentTask) -> bool:
+        """CAS 式状态迁移：仅当任务仍为 created/queued 时才置 running。
+
+        用于防止多个 worker 并发消费同一任务（至少一次投递场景）。
+        返回 False 表示已被其他 worker 抢占或状态不允许。
+        """
+        if task.status not in {
+            AgentTaskStatus.CREATED.value,
+            AgentTaskStatus.QUEUED.value,
+        }:
+            return False
+        self.db.expire_all()
+        fresh = self.db.get(AgentTask, task.id)
+        if fresh is None or fresh.status not in {
+            AgentTaskStatus.CREATED.value,
+            AgentTaskStatus.QUEUED.value,
+        }:
+            return False
+        fresh.status = AgentTaskStatus.RUNNING.value
+        fresh.started_at = datetime.utcnow()
+        fresh.finished_at = None
+        fresh.error_message = None
+        self.db.add(fresh)
+        self.emit_event(fresh.id, event_type="running", message="任务开始执行", progress=5, commit=False)
+        self.db.commit()
+        self.db.refresh(fresh)
+        task.status = fresh.status
+        task.started_at = fresh.started_at
+        return True
 
     def succeed_task(self, task: AgentTask, result_payload: dict[str, Any]) -> AgentTask:
         task.status = AgentTaskStatus.SUCCEEDED.value
@@ -191,3 +224,29 @@ class AgentTaskService:
             .order_by(AgentArtifact.id.asc())
             .all()
         )
+
+    def purge_old_tasks(self, *, max_age_days: int = 30) -> int:
+        """清理超过 max_age_days 的终态任务及其事件/产物（防止表无限膨胀）。
+
+        返回删除的任务数量。
+        """
+        from datetime import datetime, timedelta
+
+        cutoff = datetime.utcnow() - timedelta(days=max_age_days)
+        old_tasks = (
+            self.db.query(AgentTask)
+            .filter(
+                AgentTask.status.in_(TERMINAL_STATUSES),
+                AgentTask.finished_at < cutoff,
+            )
+            .all()
+        )
+        count = 0
+        for task in old_tasks:
+            self.db.query(AgentTaskEvent).filter(AgentTaskEvent.task_id == task.id).delete()
+            self.db.query(AgentArtifact).filter(AgentArtifact.task_id == task.id).delete()
+            self.db.delete(task)
+            count += 1
+        if count:
+            self.db.commit()
+        return count

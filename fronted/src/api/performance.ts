@@ -1,5 +1,4 @@
-import { del, get, post } from './http'
-import type { AgentTask } from './agentTask'
+import { del, get } from './http'
 import { getPageItems, type PaginatedData } from './pagination'
 
 export interface PerformanceMetric {
@@ -52,12 +51,6 @@ export interface PerformanceAnalyzeResponse {
   record: PerformanceRecord
   analysis: PerformanceAnalysis
   elapsed_ms: number
-}
-
-export function analyzePerformance(
-  data: PerformanceAnalyzeRequest,
-): Promise<AgentTask<PerformanceAnalyzeResponse>> {
-  return post<AgentTask<PerformanceAnalyzeResponse>>('/api/v1/performance/analyze', data)
 }
 
 export function getPerformanceRecords(projectId?: number): Promise<PerformanceRecord[]> {

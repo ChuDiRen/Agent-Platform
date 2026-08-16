@@ -236,12 +236,15 @@ async function runAnalysis() {
   analysisVisible.value = false
   processingVisible.value = true
   try {
-    await taskRunner.run({
-      document_id: selectedDocument.value.id,
-      title: selectedDocument.value.title,
-      content: editorContent.value,
-      extra_prompt: extraPrompt.value,
-    })
+    await taskRunner.run(
+      {
+        document_id: selectedDocument.value.id,
+        title: selectedDocument.value.title,
+        content: editorContent.value,
+        extra_prompt: extraPrompt.value,
+      },
+      projectId,
+    )
     if (!taskRunner.result.value) ElMessage.success('任务已提交，正在后台执行')
   } catch {
     processingVisible.value = false
@@ -424,19 +427,13 @@ onMounted(loadDocuments)
 ```json
 {{ findings.length ? JSON.stringify(findings[0], null, 2) : '{ "status": "analyzing" }' }}
 ```</pre>
-        <el-progress :percentage="65" :show-text="false" />
+        <el-progress :percentage="taskRunner.progress.value" :show-text="false" />
       </div>
     </el-dialog>
   </div>
 </template>
 
 <style scoped lang="scss">
-.api-page {
-  min-height: 100vh;
-  background: #eef1f5;
-  color: #121821;
-}
-
 .app-header {
   height: 68px;
   padding: 0 34px;
@@ -494,25 +491,6 @@ onMounted(loadDocuments)
   }
 }
 
-.api-layout {
-  display: grid;
-  grid-template-columns: 382px 1fr;
-  gap: 18px;
-  padding: 18px 6px 0;
-}
-
-.sidebar,
-.workspace {
-  background: #fff;
-  border: 1px solid #dde4ee;
-  box-shadow: 0 2px 14px rgba(15, 23, 42, 0.08);
-}
-
-.sidebar {
-  min-height: calc(100vh - 86px);
-  border-radius: 0 6px 0 0;
-}
-
 .side-actions {
   gap: 12px;
   padding: 13px 18px 27px;
@@ -553,21 +531,7 @@ button {
   border: 1px solid #d8dee6;
 }
 
-.doc-list {
-  padding: 15px 22px;
-}
-
 .doc-row {
-  display: grid;
-  grid-template-columns: 18px 1fr 28px 28px 28px;
-  align-items: center;
-  gap: 8px;
-  min-height: 23px;
-  padding: 1px 8px;
-  color: #344051;
-  font-size: 13px;
-  cursor: pointer;
-
   &.child {
     padding-left: 22px;
   }
@@ -591,53 +555,6 @@ button {
 
 .doc-name {
   @include ellipsis;
-}
-
-.workspace {
-  min-height: calc(100vh - 86px);
-  padding: 15px 18px 0;
-  border-radius: 0;
-}
-
-.workspace-head {
-  justify-content: space-between;
-  min-height: 48px;
-  padding: 0 18px;
-  background: #e9f4ff;
-  color: #1683ff;
-  font-weight: 700;
-}
-
-.head-buttons {
-  display: flex;
-  gap: 12px;
-}
-
-.editor-panel {
-  margin-top: 20px;
-  border: 1px solid #cfd8e3;
-}
-
-.toolbar {
-  justify-content: center;
-  gap: 11px;
-  height: 33px;
-  background: #f4f7fa;
-  border-bottom: 1px solid #cfd8e3;
-  color: #5e6875;
-}
-
-.editor {
-  width: 100%;
-  height: calc(100vh - 225px);
-  min-height: 500px;
-  padding: 0 20% 28px;
-  border: 0;
-  resize: none;
-  outline: none;
-  font-size: 15px;
-  line-height: 1.9;
-  color: #111827;
 }
 
 .import-body {

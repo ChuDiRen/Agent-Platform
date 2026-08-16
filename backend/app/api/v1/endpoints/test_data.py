@@ -59,8 +59,9 @@ def read_templates(
         db, project_id=project_id, skip=skip, limit=limit
     )
     items = [_template_to_out(t).model_dump() for t in templates]
+    total = template_crud.count_by_project(db, project_id=project_id)
     page = skip // limit + 1 if limit > 0 else 1
-    return paginated(items=items, total=len(items), page=page, page_size=limit)
+    return paginated(items=items, total=total, page=page, page_size=limit)
 
 
 @router.post("/templates/")

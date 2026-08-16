@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { post } from '@/api/http'
+import { register } from '@/api/user'
 
 defineOptions({ name: 'Register' })
 
@@ -34,7 +34,7 @@ async function handleRegister() {
 
   loading.value = true
   try {
-    await post('/api/v1/users/', {
+    await register({
       email: form.email,
       password: form.password,
       full_name: form.full_name,

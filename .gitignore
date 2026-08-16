@@ -46,9 +46,6 @@ fronted/dist/
 fronted/dist-test/
 backend/*.db
 
-# Alembic
-alembic/versions/*.pyc
-
 # Claude Code
 .claude/settings.local.json
 .omc/

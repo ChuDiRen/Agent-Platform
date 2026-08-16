@@ -3,9 +3,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_current_active_user, get_db
 from app.core.response import fail, paginated, success
 from app.models.agent_task import AgentTaskStatus
+from app.models.user import User as UserModel
 from app.schemas.agent_task import AgentArtifactOut, AgentTaskCreate, AgentTaskEventOut, AgentTaskOut
 from app.services.agent_task_enqueue import create_and_enqueue_agent_task
 from app.services.agent_task_service import AgentTaskService
@@ -19,12 +20,17 @@ def _task_data(task):
 
 
 @router.post("/")
-def create_agent_task(payload: AgentTaskCreate, db: Session = Depends(get_db)):
+def create_agent_task(
+    payload: AgentTaskCreate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
+):
+    # user_id 始终由服务端绑定当前登录用户，禁止客户端伪造
     task = create_and_enqueue_agent_task(
         db,
         agent_key=payload.agent_key,
         project_id=payload.project_id,
-        user_id=payload.user_id,
+        user_id=current_user.id,
         priority=payload.priority,
         input_payload=payload.input_payload,
     )
@@ -39,12 +45,15 @@ def read_agent_tasks(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
 ):
     service = AgentTaskService(db)
     items, total = service.list_tasks(
         agent_key=agent_key,
         status=status,
         project_id=project_id,
+        # 普通用户只能看到自己的任务；管理员可见全部
+        user_id=None if current_user.is_superuser else current_user.id,
         skip=skip,
         limit=limit,
     )

@@ -28,6 +28,7 @@ const loading = ref(false)
 const detailLoading = ref(false)
 const statusFilter = ref<AgentTaskStatus | ''>('')
 let timer: number | undefined
+let refreshing = false
 
 const ACTIVE_STATUSES = new Set<AgentTaskStatus>(['created', 'queued', 'running'])
 
@@ -120,11 +121,18 @@ async function loadFromRoute() {
 
 function startAutoRefresh() {
   timer = window.setInterval(() => {
+    // 防重入：上一次刷新尚未完成时跳过本次
+    if (refreshing) return
     const hasActiveTask =
       tasks.value.some((item) => ACTIVE_STATUSES.has(item.status)) ||
       (selected.value ? ACTIVE_STATUSES.has(selected.value.status) : false)
     if (hasActiveTask) {
-      refreshCurrent().catch(() => undefined)
+      refreshing = true
+      refreshCurrent()
+        .catch(() => undefined)
+        .finally(() => {
+          refreshing = false
+        })
     }
   }, 2000)
 }

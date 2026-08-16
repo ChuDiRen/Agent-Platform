@@ -22,5 +22,19 @@ class CRUDTestCase(CRUDBase[TestCase, TestCaseCreate, TestCaseUpdate]):
             query = query.filter(self.model.module_id == module_id)
         return query.order_by(self.model.id.desc()).offset(skip).limit(limit).all()
 
+    def count_by_scope(
+        self,
+        db: Session,
+        *,
+        project_id: int | None = None,
+        module_id: int | None = None,
+    ) -> int:
+        query = db.query(self.model)
+        if project_id is not None:
+            query = query.filter(self.model.project_id == project_id)
+        if module_id is not None:
+            query = query.filter(self.model.module_id == module_id)
+        return query.count()
+
 
 test_case = CRUDTestCase(TestCase)

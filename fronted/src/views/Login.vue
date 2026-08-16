@@ -37,21 +37,11 @@ async function handleLogin() {
     ElMessage.success('登录成功')
     const redirect = (route.query.redirect as string) || '/projects'
     router.push(redirect)
-  } catch (error: any) {
-    const detail = error?.response?.data?.detail
-    if (detail === '邮箱或密码错误') {
-      ElMessage.error('邮箱或密码错误，或账号已被禁用')
-    } else {
-      ElMessage.error(detail || '登录失败')
-    }
+  } catch {
+    // 错误提示由 http.ts 拦截器统一处理，此处不重复弹窗
   } finally {
     loading.value = false
   }
-}
-
-function fillDefault() {
-  form.email = 'admin@qq.com'
-  form.password = 'admin123456'
 }
 </script>
 
@@ -154,23 +144,6 @@ function fillDefault() {
             </el-button>
           </el-form-item>
         </el-form>
-        <div class="quick-fill">
-          <button class="quick-fill-btn" @click="fillDefault">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-            </svg>
-            <span>快速填写默认账号</span>
-          </button>
-        </div>
         <div class="form-footer">
           <span>还没有账号？</span>
           <router-link to="/register" class="link">立即注册</router-link>

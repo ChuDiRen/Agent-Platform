@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import AgentPageHeader from '@/components/AgentPageHeader.vue'
 import { useAgentTaskRunner } from '@/composables/useAgentTaskRunner'
+import { useProjectContext } from '@/composables/useProjectContext'
 import {
   createTestDataTemplate,
   getTestDataTemplates,
@@ -16,6 +17,8 @@ import {
 
 defineOptions({ name: 'TestDataGenerator' })
 
+const { requireProjectId } = useProjectContext()
+const projectId = requireProjectId()
 const count = ref(10)
 const format = ref<TestDataFormat>('json')
 const lang = ref<TestDataLanguage>('zh')
@@ -80,7 +83,7 @@ async function runGenerate() {
 
   loading.value = true
   try {
-    await taskRunner.run(payload as unknown as Record<string, unknown>)
+    await taskRunner.run(payload as unknown as Record<string, unknown>, projectId)
     if (taskRunner.result.value) {
       result.value = taskRunner.result.value
       ElMessage.success(`生成成功，耗时${result.value.elapsed_ms}ms`)
@@ -281,12 +284,6 @@ onMounted(async () => {
 </template>
 
 <style scoped lang="scss">
-.generator-page {
-  min-height: 100vh;
-  background: #f4f6f9;
-  color: $text-primary;
-}
-
 .topbar {
   height: 56px;
   padding: 0 40px;
@@ -330,22 +327,6 @@ onMounted(async () => {
   background: transparent;
   color: #fff;
   cursor: pointer;
-}
-
-.workspace {
-  width: min(1040px, calc(100vw - 40px));
-  margin: 36px auto;
-}
-
-.panel {
-  background: #fff;
-  border: 1px solid $border-color;
-  border-radius: 8px;
-  box-shadow: $shadow-md;
-}
-
-.config-panel {
-  padding: 20px 28px 12px;
 }
 
 .panel-head {
@@ -424,13 +405,6 @@ button {
 }
 
 .basic-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(180px, 1fr));
-  gap: 20px;
-  width: 64%;
-  min-width: 620px;
-  margin-bottom: 8px;
-
   label {
     display: grid;
     grid-template-columns: 64px 1fr;
@@ -452,13 +426,6 @@ button {
 }
 
 .field-row {
-  display: grid;
-  grid-template-columns: 132px 112px 1fr 28px;
-  gap: 56px;
-  align-items: center;
-  padding: 8px 4px;
-  background: #f2f3f5;
-
   & + & {
     margin-top: 8px;
   }

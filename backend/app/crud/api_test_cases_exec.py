@@ -22,6 +22,12 @@ class CRUDApiTestCasesExec(CRUDBase[ApiTestCasesExec, ApiTestExecCreate, ApiTest
             query = query.filter(self.model.project_id == project_id)
         return query.order_by(self.model.id.desc()).offset(skip).limit(limit).all()
 
+    def count_by_project(self, db: Session, *, project_id: int | None = None) -> int:
+        query = db.query(self.model)
+        if project_id is not None:
+            query = query.filter(self.model.project_id == project_id)
+        return query.count()
+
     def create(self, db: Session, *, obj_in: ApiTestExecCreate) -> ApiTestCasesExec:
         obj_in_data = jsonable_encoder(obj_in)
         for field in ("case_ids", "details", "exec_param"):

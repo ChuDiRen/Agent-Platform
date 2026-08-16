@@ -269,12 +269,6 @@ onMounted(loadRecords)
 </template>
 
 <style lang="scss" scoped>
-.performance-page {
-  min-height: 100vh;
-  background: #f5f7fb;
-  color: #1f2937;
-}
-
 .topbar {
   height: 72px;
   padding: 0 32px;
@@ -332,27 +326,6 @@ onMounted(loadRecords)
   font-size: 16px;
 }
 
-.workspace {
-  display: grid;
-  grid-template-columns: minmax(520px, 1.1fr) minmax(420px, 0.9fr);
-  gap: 20px;
-  padding: 24px 32px 40px;
-}
-
-.analysis-panel,
-.result-panel,
-.history-panel {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-}
-
-.analysis-panel,
-.result-panel {
-  padding: 22px;
-}
-
 .panel-head,
 .history-head,
 .finding-title {
@@ -363,8 +336,6 @@ onMounted(loadRecords)
 }
 
 .panel-head {
-  margin-bottom: 18px;
-
   h1 {
     margin: 0 0 8px;
     font-size: 24px;
@@ -393,10 +364,6 @@ onMounted(loadRecords)
 .metric-editor {
   display: grid;
   gap: 10px;
-}
-
-.metric-row {
-  grid-template-columns: 1fr 130px 100px 130px 64px;
 }
 
 .score-card {
@@ -441,12 +408,6 @@ onMounted(loadRecords)
   margin-bottom: 16px;
 }
 
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
 .metric-card {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
@@ -489,11 +450,6 @@ onMounted(loadRecords)
   }
 }
 
-.history-panel {
-  grid-column: 1 / -1;
-  padding: 18px 22px 22px;
-}
-
 .history-head {
   margin-bottom: 12px;
 
@@ -525,11 +481,6 @@ onMounted(loadRecords)
 }
 
 @media (max-width: 1060px) {
-  .workspace {
-    grid-template-columns: 1fr;
-    padding: 16px;
-  }
-
   .topbar {
     height: auto;
     grid-template-columns: 1fr;
@@ -540,11 +491,6 @@ onMounted(loadRecords)
   .project-name,
   .exit-btn {
     justify-self: start;
-  }
-
-  .metric-row,
-  .metric-grid {
-    grid-template-columns: 1fr;
   }
 }
 .performance-page {

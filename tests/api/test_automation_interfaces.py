@@ -11,7 +11,37 @@ def data(response):
 def test_api_automation_cases_execs_copy_delete_and_not_found(client, db):
     cases_response = client.get("/api/v1/api-automation/cases", params={"project_id": 401})
     assert cases_response.status_code == 200
-    assert data(cases_response) == []
+    assert data(cases_response)["items"] == []
+    assert data(cases_response)["total"] == 0
+
+    # 用例 CRUD（真实数据源）
+    created = client.post(
+        "/api/v1/api-automation/cases",
+        json={
+            "project_id": 401,
+            "name": "查询用户列表",
+            "priority": 1,
+            "request": {
+                "path": "/api/v1/users/",
+                "method": "GET",
+                "headers": {"Authorization": "Bearer test"},
+            },
+            "expected": "200",
+        },
+    )
+    assert created.status_code == 200
+    case = data(created)
+    assert case["request"]["method"] == "GET"
+
+    listed = client.get("/api/v1/api-automation/cases", params={"project_id": 401})
+    assert len(data(listed)["items"]) == 1
+
+    updated = client.put(
+        f"/api/v1/api-automation/cases/{case['id']}",
+        json={"name": "查询用户列表-更新", "priority": 2},
+    )
+    assert updated.status_code == 200
+    assert data(updated)["name"] == "查询用户列表-更新"
 
     missing_case = client.get("/api/v1/api-automation/cases/10001")
     assert missing_case.status_code == 200
@@ -65,11 +95,45 @@ def test_api_automation_cases_execs_copy_delete_and_not_found(client, db):
     assert missing_delete.status_code == 200
     assert missing_delete.json()["code"] == 404
 
+    # 清理用例
+    assert client.delete(f"/api/v1/api-automation/cases/{case['id']}").status_code == 200
+
 
 def test_ui_automation_cases_execs_copy_delete_and_not_found(client, db):
     cases_response = client.get("/api/v1/ui-automation/cases", params={"project_id": 402})
     assert cases_response.status_code == 200
-    assert data(cases_response) == []
+    assert data(cases_response)["items"] == []
+    assert data(cases_response)["total"] == 0
+
+    # 用例 CRUD（真实数据源）
+    created = client.post(
+        "/api/v1/ui-automation/cases",
+        json={
+            "project_id": 402,
+            "name": "登录页冒烟测试",
+            "priority": 1,
+            "page_url": "http://localhost:3000/login",
+            "steps": [
+                {"action": "fill", "target": "#username", "value": "admin"},
+                {"action": "fill", "target": "#password", "value": "secret"},
+                {"action": "click", "target": "button[type=submit]", "value": ""},
+            ],
+            "expected": "登录成功",
+        },
+    )
+    assert created.status_code == 200
+    case = data(created)
+    assert case["page_url"].endswith("/login")
+
+    listed = client.get("/api/v1/ui-automation/cases", params={"project_id": 402})
+    assert len(data(listed)["items"]) == 1
+
+    updated = client.put(
+        f"/api/v1/ui-automation/cases/{case['id']}",
+        json={"name": "登录页冒烟测试-更新"},
+    )
+    assert updated.status_code == 200
+    assert data(updated)["name"] == "登录页冒烟测试-更新"
 
     missing_case = client.get("/api/v1/ui-automation/cases/509")
     assert missing_case.status_code == 200
@@ -121,3 +185,6 @@ def test_ui_automation_cases_execs_copy_delete_and_not_found(client, db):
     missing_delete = client.delete("/api/v1/ui-automation/execs/999999")
     assert missing_delete.status_code == 200
     assert missing_delete.json()["code"] == 404
+
+    # 清理用例
+    assert client.delete(f"/api/v1/ui-automation/cases/{case['id']}").status_code == 200

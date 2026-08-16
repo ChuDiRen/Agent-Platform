@@ -10,10 +10,9 @@
     ├── test_case/                 # ② AI 测试用例智能体
     ├── ui_automation/             # ③ AI 界面 UI 自动化
     ├── api_document/              # ④ AI 接口文档分析
-    ├── api_test_case/             # ⑤ AI 接口用例设计
-    ├── api_automation/            # ⑥ AI 接口自动化脚本
-    ├── test_data/                 # ⑦ AI 测试数据生成
-    └── performance/               # ⑧ AI 性能数据分析
+    ├── api_automation/            # ⑤ AI 接口自动化脚本
+    ├── test_data/                 # ⑥ AI 测试数据生成
+    └── performance/               # ⑦ AI 性能数据分析
 
 用法:
     from app.agents.requirement_review import RequirementReviewAgent

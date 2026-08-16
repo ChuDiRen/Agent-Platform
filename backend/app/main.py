@@ -1,6 +1,8 @@
+from contextlib import asynccontextmanager
 import json
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 from app.api.deps import get_current_active_user
 from app.core.config import settings
@@ -23,10 +25,37 @@ from app.api.v1.endpoints import (
     agent_tasks,
 )
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    seed_defaults()
+    yield
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
+    lifespan=lifespan,
 )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError):
+    """统一数据库异常处理：不向客户端泄露内部细节。"""
+    return JSONResponse(
+        status_code=500,
+        content={"code": 500, "message": "数据库操作失败", "data": None},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """兜底异常处理：生产环境不泄露堆栈。"""
+    detail = str(exc) if settings.DEBUG else "服务器内部错误"
+    return JSONResponse(
+        status_code=500,
+        content={"code": 500, "message": detail, "data": None},
+    )
 
 # CORS
 if settings.cors_origins:
@@ -131,17 +160,19 @@ SEED_AGENTS = [
 ]
 
 
-@app.on_event("startup")
 def seed_defaults():
-    """启动时自动创建默认管理员和智能体数据（如不存在）。"""
+    """启动时自动创建默认管理员和智能体数据（如不存在）。
+
+    管理员账号来自 settings.ADMIN_EMAIL / ADMIN_PASSWORD（可用环境变量覆盖）。
+    """
     db = SessionLocal()
     try:
         Base.metadata.create_all(bind=db.get_bind())
-        # Seed admin
-        if not db.query(User).filter(User.email == "admin@qq.com").first():
+        # Seed admin（仅当该邮箱不存在时创建）
+        if not db.query(User).filter(User.email == settings.ADMIN_EMAIL).first():
             db.add(User(
-                email="admin@qq.com",
-                hashed_password=get_password_hash("admin123456"),
+                email=settings.ADMIN_EMAIL,
+                hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
                 full_name="管理员",
                 is_active=True,
                 is_superuser=True,

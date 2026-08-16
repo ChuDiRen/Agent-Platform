@@ -141,11 +141,22 @@ export function upload<T>(url: string, formData: FormData): Promise<T> {
 }
 
 export function download(url: string, params?: object) {
-  const iframe = document.createElement('iframe')
-  iframe.src = `${baseUrl}${url}?${new URLSearchParams(params as Record<string, string>)}`
-  iframe.style.display = 'none'
-  document.body.appendChild(iframe)
-  setTimeout(() => document.body.removeChild(iframe), 5000)
+  // 通过带 Authorization 的 axios 请求下载（iframe 直连无法携带 token，必然 401）
+  const query = params ? `?${new URLSearchParams(params as Record<string, string>)}` : ''
+  return service.get(`${url}${query}`, { responseType: 'blob' }).then((response) => {
+    const disposition = response.headers['content-disposition'] || ''
+    const match = disposition.match(/filename="?([^";]+)"?/)
+    const filename = match ? match[1] : `download-${Date.now()}`
+    const blobUrl = URL.createObjectURL(response.data as Blob)
+    const link = document.createElement('a')
+    link.href = blobUrl
+    link.download = decodeURIComponent(filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(blobUrl)
+    return response.data
+  })
 }
 
 export { service }

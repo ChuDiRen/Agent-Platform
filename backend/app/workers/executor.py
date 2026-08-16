@@ -7,6 +7,10 @@ from app.models.agent_task import AgentTaskStatus
 from app.services.agent_task_service import AgentTaskService
 
 
+class CancelledError(Exception):
+    """任务被取消时抛出，用于协作式中断。"""
+
+
 @dataclass
 class AgentExecutionResult:
     summary: str
@@ -55,6 +59,14 @@ class AgentExecutionContext:
         self.service.db.expire_all()
         task = self.service.get_task(self.task_id)
         return task is not None and task.status == AgentTaskStatus.CANCELLED.value
+
+    def check_cancelled(self) -> None:
+        """协作式取消检查点：executor 在长任务中定期调用。
+
+        若任务已被取消，抛出 CancelledError 以中断执行。
+        """
+        if self.is_cancelled():
+            raise CancelledError(f"任务 {self.task_id} 已被取消")
 
 
 AgentExecutor = Callable[[dict[str, Any], AgentExecutionContext], AgentExecutionResult]

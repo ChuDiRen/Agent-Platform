@@ -10,6 +10,11 @@ from app.core.response import success, fail
 router = APIRouter()
 
 
+def _can_manage_user(current: UserModel, target_id: int) -> bool:
+    """仅本人或管理员可以管理目标用户。"""
+    return current.is_superuser or current.id == target_id
+
+
 @router.post("/")
 def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
     existing = user_crud.get_by_email(db, email=user_in.email)
@@ -23,11 +28,13 @@ def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
 def read_user(
     user_id: int,
     db: Session = Depends(get_db),
-    _current_user: UserModel = Depends(get_current_active_user),
+    current_user: UserModel = Depends(get_current_active_user),
 ):
     user = user_crud.get(db, user_id)
     if not user:
         return fail(message="User not found", code=404)
+    if not _can_manage_user(current_user, user_id):
+        return fail(message="无权查看该用户", code=403)
     return success(data=User.model_validate(user).model_dump())
 
 
@@ -47,11 +54,13 @@ def update_user(
     user_id: int,
     user_in: UserUpdate,
     db: Session = Depends(get_db),
-    _current_user: UserModel = Depends(get_current_active_user),
+    current_user: UserModel = Depends(get_current_active_user),
 ):
     user = user_crud.get(db, user_id)
     if not user:
         return fail(message="User not found", code=404)
+    if not _can_manage_user(current_user, user_id):
+        return fail(message="无权修改该用户", code=403)
     if user_in.email and user_in.email != user.email:
         existing = user_crud.get_by_email(db, email=user_in.email)
         if existing:
@@ -77,6 +86,7 @@ def delete_user(
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     user = user_crud.authenticate(db, email=login_data.email, password=login_data.password)
     if not user:
+        # 业务错误走统一响应（HTTP 200 + code!=0），前端拦截器统一弹 message
         return fail(message="邮箱或密码错误", code=401)
     token = create_access_token(subject=str(user.id))
     result = LoginResponse(access_token=token, token_type="bearer", user=user)

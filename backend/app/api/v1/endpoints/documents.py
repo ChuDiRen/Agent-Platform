@@ -14,6 +14,7 @@ from app.schemas.document import (
     RequirementReviewResponse,
 )
 from app.core.response import success, fail, paginated
+from app.core.config import settings
 from app.schemas.agent_task import AgentTaskOut
 from app.services.agent_task_enqueue import create_and_enqueue_agent_task
 from app.utils.file_parser import extract_text, SUPPORTED_EXTENSIONS
@@ -47,8 +48,9 @@ def read_documents(
 ):
     documents = document_crud.get_multi_by_project(db, project_id=project_id, skip=skip, limit=limit)
     items = [_document_to_out(d).model_dump() for d in documents]
+    total = document_crud.count_by_project(db, project_id=project_id)
     page = skip // limit + 1 if limit > 0 else 1
-    return paginated(items=items, total=len(items), page=page, page_size=limit)
+    return paginated(items=items, total=total, page=page, page_size=limit)
 
 
 @router.post("/")
@@ -67,10 +69,13 @@ async def upload_document(
     """上传文件并解析为文档内容。
 
     支持格式: .txt, .md, .json, .xml, .csv, .html, .doc, .docx, .pdf
+    文件大小上限: 10MB
     """
     raw = await file.read()
     if not raw:
         return fail(message="文件内容为空", code=400)
+    if len(raw) > settings.MAX_UPLOAD_SIZE_BYTES:
+        return fail(message="文件超过 10MB 大小限制", code=413)
 
     try:
         content = extract_text(file.filename or "unknown.txt", raw)

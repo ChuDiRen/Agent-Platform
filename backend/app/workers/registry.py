@@ -45,9 +45,14 @@ def _execute_api_automation(payload, context):
 
     context.emit_event("正在执行接口自动化", progress=30)
     case_ids = payload.get("case_ids", [])
-    details = build_execution_details(case_ids=case_ids, exec_param=payload.get("exec_param", {}))
+    details = build_execution_details(
+        case_ids=case_ids,
+        exec_param=payload.get("exec_param", {}),
+        db=context.db,
+        check_cancelled=context.check_cancelled,
+    )
     if not case_ids:
-        return _result("接口自动化执行完成", {"record_id": None, "details": details})
+        return _result("接口自动化执行完成", {"record_id": None, "details": details.model_dump()})
     record = api_test_cases_exec.create(
         context.db,
         obj_in=ApiTestExecCreate(
@@ -61,7 +66,7 @@ def _execute_api_automation(payload, context):
             exec_status="已完成",
         ),
     )
-    return _result("接口自动化执行完成", {"record_id": record.id, "details": details})
+    return _result("接口自动化执行完成", {"record_id": record.id, "details": details.model_dump()})
 
 
 def _execute_ui_automation(payload, context):
@@ -71,9 +76,14 @@ def _execute_ui_automation(payload, context):
 
     context.emit_event("正在执行 UI 自动化", progress=30)
     case_ids = payload.get("case_ids", [])
-    details = build_ui_execution_details(case_ids=case_ids, exec_param=payload.get("exec_param", {}))
+    details = build_ui_execution_details(
+        case_ids=case_ids,
+        exec_param=payload.get("exec_param", {}),
+        db=context.db,
+        check_cancelled=context.check_cancelled,
+    )
     if not case_ids:
-        return _result("UI 自动化执行完成", {"record_id": None, "details": details})
+        return _result("UI 自动化执行完成", {"record_id": None, "details": details.model_dump()})
     record = ui_test_cases_exec.create(
         context.db,
         obj_in=UiTestExecCreate(
@@ -87,7 +97,7 @@ def _execute_ui_automation(payload, context):
             exec_status="已完成",
         ),
     )
-    return _result("UI 自动化执行完成", {"record_id": record.id, "details": details})
+    return _result("UI 自动化执行完成", {"record_id": record.id, "details": details.model_dump()})
 
 
 def _execute_performance(payload, context):

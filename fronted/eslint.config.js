@@ -52,5 +52,12 @@ export default [
       'prettier/prettier': 'warn',
     },
   },
+  {
+    // AgentHub 的 v-html 渲染的是代码内白名单 SVG 常量（ICON_SVG），不含用户输入，豁免 XSS 规则
+    files: ['**/views/AgentHub.vue'],
+    rules: {
+      'vue/no-v-html': 'off',
+    },
+  },
   eslintConfigPrettier,
 ]

@@ -15,6 +15,7 @@ import {
   type TestCaseGenerateResponse,
   type TestCasePayload,
 } from '@/api/testCase'
+import { getDocuments } from '@/api/document'
 
 defineOptions({ name: 'AITestCaseAgent' })
 
@@ -42,6 +43,9 @@ const generatedTableRef = ref<
 const generatedCases = ref<TestCasePayload[]>([])
 const selectedGenerated = ref<TestCasePayload[]>([])
 const testCases = ref<TestCase[]>([])
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 const taskRunner = useAgentTaskRunner<TestCaseGenerateResponse>('test_case')
 taskRunner.onFinished((task) => {
   const response = task.result_payload?.output
@@ -71,10 +75,10 @@ const editForm = reactive<TestCasePayload>({
 })
 const editingId = ref<number | null>(null)
 
-const treeData: TreeNode[] = []
+const treeData = ref<TreeNode[]>([])
 
 const selectedModule = computed(() => {
-  for (const group of treeData) {
+  for (const group of treeData.value) {
     const match = group.children?.find((item) => item.id === selectedModuleId.value)
     if (match) return match
   }
@@ -86,18 +90,52 @@ const currentTitle = computed(() => selectedModule.value?.title || '未选择模
 async function loadCases() {
   tableLoading.value = true
   try {
-    testCases.value = await getTestCases({
+    const result = await getTestCases({
       project_id: projectId,
       module_id: selectedModuleId.value || undefined,
+      skip: (page.value - 1) * pageSize.value,
+      limit: pageSize.value,
     })
+    testCases.value = result.items
+    total.value = result.total
   } finally {
     tableLoading.value = false
+  }
+}
+
+function handlePageChange(current: number) {
+  page.value = current
+  loadCases()
+}
+
+async function loadModules() {
+  try {
+    const documents = await getDocuments(projectId)
+    // 用项目下的文档目录构建模块树：根目录 → 子文档（非目录节点即需求模块）
+    const roots = documents.filter((item) => !item.parent_id)
+    treeData.value = roots.map((root) => ({
+      id: root.id,
+      title: root.title || root.name,
+      content: root.content || '',
+      type: 'group',
+      children: documents
+        .filter((item) => item.parent_id === root.id && !item.is_directory)
+        .map((child) => ({
+          id: child.id,
+          title: child.title || child.name,
+          content: child.content || '',
+          type: 'module',
+        })),
+    }))
+  } catch {
+    ElMessage.error('加载需求模块失败')
   }
 }
 
 async function selectModule(module: RequirementModule) {
   selectedModuleId.value = module.id
   selectedRows.value = []
+  page.value = 1
   await loadCases()
 }
 
@@ -250,7 +288,10 @@ function exportCases() {
   URL.revokeObjectURL(url)
 }
 
-onMounted(loadCases)
+onMounted(async () => {
+  await loadModules()
+  await loadCases()
+})
 </script>
 
 <template>
@@ -332,14 +373,13 @@ onMounted(loadCases)
           </el-table>
 
           <div class="pager">
-            <span>共 {{ testCases.length }} 条</span>
-            <el-select model-value="10" class="page-size" disabled>
-              <el-option label="10条/页" value="10" />
-            </el-select>
-            <span class="page-current">1</span>
-            <span>前往</span>
-            <el-input model-value="1" class="page-input" readonly />
-            <span>页</span>
+            <el-pagination
+              :current-page="page"
+              :page-size="pageSize"
+              :total="total"
+              layout="total, prev, pager, next"
+              @current-change="handlePageChange"
+            />
           </div>
         </div>
       </section>
@@ -442,12 +482,6 @@ onMounted(loadCases)
 </template>
 
 <style lang="scss" scoped>
-.case-page {
-  min-height: 100vh;
-  background: #f3f4f6;
-  color: #272b33;
-}
-
 .topbar {
   height: 76px;
   background: #111418;
@@ -512,28 +546,6 @@ onMounted(loadCases)
   }
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: 390px minmax(0, 1fr);
-  gap: 26px;
-  padding: 26px;
-}
-
-.sidebar,
-.prompt-panel,
-.case-card {
-  background: #fff;
-  border-radius: 4px;
-  box-shadow: 0 8px 22px rgba(25, 35, 60, 0.08);
-}
-
-.sidebar {
-  height: calc(100vh - 128px);
-  overflow: auto;
-  border-top: 1px solid #7aa7f8;
-  padding: 16px 14px;
-}
-
 .tree-row {
   display: grid;
   grid-template-columns: 18px 24px minmax(0, 1fr) 48px;
@@ -572,40 +584,8 @@ onMounted(loadCases)
   min-width: 0;
 }
 
-.prompt-panel {
-  padding: 24px 26px;
-  margin-bottom: 20px;
-}
-
 .case-card {
   overflow: hidden;
-}
-
-.case-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 24px 26px;
-  border-bottom: 1px solid #e8edf5;
-
-  h1 {
-    font-size: 21px;
-    font-weight: 700;
-    margin: 0;
-  }
-}
-
-.actions {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.case-card :deep(.el-table) {
-  margin: 26px;
-  width: calc(100% - 52px);
 }
 
 .case-link {
@@ -616,15 +596,6 @@ onMounted(loadCases)
   font-size: 16px;
   cursor: pointer;
   text-align: left;
-}
-
-.pager {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 18px;
-  padding: 0 26px 24px;
-  color: #4b5563;
 }
 
 .page-size {

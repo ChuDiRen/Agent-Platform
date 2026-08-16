@@ -19,6 +19,12 @@ class CRUDTestDataTemplate(
             query = query.filter(self.model.project_id == project_id)
         return query.order_by(self.model.id.desc()).offset(skip).limit(limit).all()
 
+    def count_by_project(self, db: Session, *, project_id: int | None = None) -> int:
+        query = db.query(self.model)
+        if project_id is not None:
+            query = query.filter(self.model.project_id == project_id)
+        return query.count()
+
     def create(self, db: Session, *, obj_in: TestDataTemplateCreate) -> TestDataTemplate:
         obj_in_data = jsonable_encoder(obj_in)
         obj_in_data["fields"] = json.dumps(obj_in_data["fields"], ensure_ascii=False)

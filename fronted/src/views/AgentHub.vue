@@ -4,13 +4,27 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/store'
 import { getAgents, type AgentInfo } from '@/api/agent'
+import { useProjectContext } from '@/composables/useProjectContext'
 
 defineOptions({ name: 'AgentHub' })
 
 const router = useRouter()
 const userStore = useUserStore()
+const { projectId } = useProjectContext()
 const agents = ref<AgentInfo[]>([])
 const loading = ref(true)
+
+// 智能体 icon → 功能页路由映射（后端 icon 字段驱动，与 AgentInfo 契约一致）
+const AGENT_ROUTES: Record<string, string> = {
+  doc: '/requirement-review',
+  testcase: '/ai-test-cases',
+  ui: '/ui-automation',
+  'api-doc': '/interface-document-analysis',
+  'api-case': '/ai-test-cases',
+  'api-auto': '/api-automation',
+  data: '/test-data-generator',
+  perf: '/performance-analysis',
+}
 
 function handleExit() {
   ElMessage.info('退出项目')
@@ -18,7 +32,10 @@ function handleExit() {
 }
 
 function openTaskCenter() {
-  router.push('/agent-tasks')
+  router.push({
+    path: '/agent-tasks',
+    query: projectId.value ? { projectId: String(projectId.value) } : {},
+  })
 }
 
 function handleCommand(cmd: string) {
@@ -33,39 +50,16 @@ function handleUse(agent: AgentInfo) {
     ElMessage.info('敬请期待')
     return
   }
-  if (agent.icon === 'data' || agent.name.includes('测试数据生成')) {
-    router.push('/test-data-generator')
+  const target = AGENT_ROUTES[agent.icon || '']
+  if (!target) {
+    ElMessage.warning('功能开发中，即将开放')
     return
   }
-  if (agent.icon === 'ui' || agent.name.includes('界面UI')) {
-    router.push('/ui-automation')
-    return
-  }
-  if (agent.icon === 'api-auto' || agent.name.includes('接口自动化')) {
-    router.push('/api-automation')
-    return
-  }
-  if (agent.icon === 'perf' || agent.name.includes('性能数据分析')) {
-    router.push('/performance-analysis')
-    return
-  }
-  if (agent.icon === 'api-case' || agent.name.includes('接口用例')) {
-    router.push('/ai-test-cases')
-    return
-  }
-  if (agent.icon === 'testcase' || agent.name.includes('测试用例')) {
-    router.push('/ai-test-cases')
-    return
-  }
-  if (agent.icon === 'api-doc' || agent.name.includes('接口文档分析')) {
-    router.push('/interface-document-analysis')
-    return
-  }
-  if (agent.icon === 'doc' || agent.name.includes('需求')) {
-    router.push('/requirement-review')
-    return
-  }
-  ElMessage.warning('功能开发中，即将开放')
+  // 关键修复：跳转时必须透传 projectId，否则智能体页 requireProjectId() 校验失败被弹回
+  router.push({
+    path: target,
+    query: projectId.value ? { projectId: String(projectId.value) } : {},
+  })
 }
 
 function parseTags(raw?: string): string[] {
@@ -182,6 +176,7 @@ onMounted(async () => {
 </template>
 
 <script lang="ts">
+// ICON_SVG 为代码内白名单常量（值为本地 SVG path，不含用户输入）
 const ICON_SVG: Record<string, string> = {
   doc: `<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>`,
   testcase: `<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>`,

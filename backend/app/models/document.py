@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.sql import func
 
 from app.db.base_class import Base
@@ -8,9 +8,9 @@ class Document(Base):
     __tablename__ = "documents"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, nullable=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
     name = Column(String(255), nullable=False)
-    parent_id = Column(Integer, nullable=True, index=True)
+    parent_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=True, index=True)
     title = Column(String(255), nullable=True)
     content = Column(Text, nullable=True)
     created_by = Column(String(100), nullable=True)

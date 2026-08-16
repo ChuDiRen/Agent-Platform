@@ -16,24 +16,31 @@ class Settings(BaseSettings):
     # 数据库
     DATABASE_URL: str = "sqlite:///./test.db"
 
-    # JWT
-    SECRET_KEY: str = "change-me-in-production-please"
+    # JWT — 生产环境必须通过环境变量 SECRET_KEY 覆盖（见 validate_production_defaults）
+    SECRET_KEY: str = "dev-only-insecure-secret-key"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # CORS
     BACKEND_CORS_ORIGINS: Union[list[str], str] = ["*"]
 
-    # Celery / Redis
-    CELERY_BROKER_URL: str = "redis://:admin123456@192.168.111.128:6379/0"
-    CELERY_RESULT_BACKEND: str = "redis://:admin123456@192.168.111.128:6379/1"
+    # Celery / Redis — 生产环境必须通过环境变量覆盖（默认仅本机、无凭据）
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
     CELERY_BROKER_CONNECTION_TIMEOUT: float = 5.0
     CELERY_TASK_ALWAYS_EAGER: bool = False
 
-    # Agent model provider
+    # Agent model provider — API Key 不在代码中提供，必须通过环境变量 AGENT_MODEL_API_KEY 配置
     AGENT_MODEL_SPEC: str = "openai:mimo-v2.5-pro"
     AGENT_MODEL_BASE_URL: str = "https://token-plan-sgp.xiaomimimo.com/v1"
-    AGENT_MODEL_API_KEY: str = "tp-s5516suwc3a233b2gyrln9ovveptfd7chvwe582kwk849lrj"
+    AGENT_MODEL_API_KEY: str = ""
+
+    # 启动 seed 管理员（仅空库时创建；生产环境必须覆盖 ADMIN_PASSWORD）
+    ADMIN_EMAIL: str = "admin@qq.com"
+    ADMIN_PASSWORD: str = "admin123456"
+
+    # 上传限制
+    MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10MB
 
     @classmethod
     def settings_customise_sources(
@@ -78,12 +85,14 @@ class Settings(BaseSettings):
     def validate_production_defaults(self):
         if self.DEBUG:
             return self
-        if self.SECRET_KEY == "change-me-in-production-please":
+        if self.SECRET_KEY in {"", "dev-only-insecure-secret-key", "change-me-in-production-please"}:
             raise ValueError("生产模式必须配置安全的 SECRET_KEY")
         if self.cors_origins == ["*"]:
             raise ValueError("生产模式不允许使用通配 CORS")
         if not self.AGENT_MODEL_API_KEY or self.AGENT_MODEL_API_KEY in {"change-me", "not-used", "placeholder"}:
             raise ValueError("生产模式必须配置有效的 Agent 模型 API Key")
+        if not self.ADMIN_PASSWORD or self.ADMIN_PASSWORD == "admin123456":
+            raise ValueError("生产模式必须覆盖默认管理员密码 ADMIN_PASSWORD")
         return self
 
 

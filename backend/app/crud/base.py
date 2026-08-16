@@ -1,7 +1,9 @@
-from typing import Any, Generic, Type, TypeVar, Optional
+from typing import Any, Generic, Optional, Type, TypeVar
+
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+
 from app.db.base_class import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
@@ -19,7 +21,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def get_multi(
         self, db: Session, *, skip: int = 0, limit: int = 100
     ) -> list[ModelType]:
-        return db.query(self.model).offset(skip).limit(limit).all()
+        return (
+            db.query(self.model)
+            .order_by(self.model.id.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    def count(self, db: Session) -> int:
+        return db.query(self.model).count()
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)
@@ -42,8 +53,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.refresh(db_obj)
         return db_obj
 
-    def remove(self, db: Session, *, id: int) -> ModelType:
+    def remove(self, db: Session, *, id: int) -> Optional[ModelType]:
         obj = db.get(self.model, id)
+        if obj is None:
+            return None
         db.delete(obj)
         db.commit()
         return obj

@@ -22,3 +22,14 @@ export function updateProject(projectId: number, data: ProjectUpdate): Promise<P
 export function deleteProject(projectId: number): Promise<ProjectInfo> {
   return del<ProjectInfo>(`/api/v1/projects/${projectId}`)
 }
+
+export interface ProjectVerifyResult {
+  valid: boolean
+}
+
+export function verifyProjectPassword(
+  projectId: number,
+  password: string,
+): Promise<ProjectVerifyResult> {
+  return post<ProjectVerifyResult>(`/api/v1/projects/${projectId}/verify-password`, { password })
+}

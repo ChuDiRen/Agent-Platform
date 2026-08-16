@@ -46,7 +46,7 @@ def test_project_entry_preserves_project_context_query():
     source = (FRONTEND_SRC / "views" / "Project.vue").read_text(encoding="utf-8")
 
     assert "router.push({ path: '/agent-hub', query: { projectId: String(projectId) } })" in source
-    assert "enterProject(fresh.id)" in source
+    assert "verifyProjectPassword" in source
     assert "router.push('/agent-hub')" not in source
 
 

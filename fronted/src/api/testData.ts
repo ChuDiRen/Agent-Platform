@@ -1,5 +1,4 @@
 import { del, get, post, put } from './http'
-import type { AgentTask } from './agentTask'
 import { getPageItems, type PaginatedData } from './pagination'
 
 export type TestDataFieldType = 'number' | 'string' | 'email' | 'phone' | 'date' | 'boolean'
@@ -41,12 +40,6 @@ export interface TestDataTemplatePayload extends TestDataGenerateRequest {
   project_id?: number | null
   name: string
   description?: string | null
-}
-
-export function generateTestData(
-  data: TestDataGenerateRequest,
-): Promise<AgentTask<TestDataGenerateResponse>> {
-  return post<AgentTask<TestDataGenerateResponse>>('/api/v1/test-data/generate', data)
 }
 
 export function getTestDataTemplates(projectId?: number): Promise<TestDataTemplate[]> {

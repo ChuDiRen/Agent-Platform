@@ -8,7 +8,7 @@ import {
   createProject,
   updateProject,
   deleteProject,
-  getProject,
+  verifyProjectPassword,
   type ProjectInfo,
   type ProjectCreate,
 } from '@/api/project'
@@ -32,12 +32,10 @@ const defaultForm: ProjectCreate = {
   name: '',
   description: '',
   password: '',
-  llm_url: 'https://token-plan-sgp.xiaomimimo.com/v1',
-  llm_key: '',
-  llm_model: 'mimo-v2.5-pro',
-  lvm_url: 'https://token-plan-sgp.xiaomimimo.com/v1',
-  lvm_key: '',
-  lvm_model: 'mimo-v2.5',
+  llm_url: '',
+  llm_model: '',
+  lvm_url: '',
+  lvm_model: '',
 }
 const form = ref<ProjectCreate>({ ...defaultForm })
 const dialogTitle = computed(() => (isEdit.value ? '编辑项目' : '新建项目'))
@@ -66,12 +64,11 @@ function openEditDialog(proj: ProjectInfo) {
   form.value = {
     name: proj.name,
     description: proj.description ?? '',
-    password: proj.password ?? '',
+    // 密码与密钥不参与回显（后端不回传明文）；留空表示不修改
+    password: '',
     llm_url: proj.llm_url ?? '',
-    llm_key: proj.llm_key ?? '',
     llm_model: proj.llm_model ?? '',
     lvm_url: proj.lvm_url ?? '',
-    lvm_key: proj.lvm_key ?? '',
     lvm_model: proj.lvm_model ?? '',
   }
   dialogVisible.value = true
@@ -84,7 +81,15 @@ async function handleSubmit() {
   }
   try {
     if (isEdit.value && editId.value !== null) {
-      await updateProject(editId.value, form.value)
+      const payload: ProjectCreate = { ...form.value }
+      // 编辑时密码留空表示不修改（避免误清已有密码）
+      if (!payload.password) {
+        const rest = { ...payload }
+        delete rest.password
+        await updateProject(editId.value, rest)
+      } else {
+        await updateProject(editId.value, payload)
+      }
       ElMessage.success('项目已更新')
     } else {
       await createProject(form.value)
@@ -119,7 +124,7 @@ async function enterProject(projectId: number) {
 }
 
 function handleEnterProject(proj: ProjectInfo) {
-  if (proj.password) {
+  if (proj.has_password) {
     pendingProject.value = proj
     passwordInput.value = ''
     passwordError.value = ''
@@ -136,13 +141,13 @@ async function verifyPassword() {
     return
   }
   try {
-    const fresh = await getProject(pendingProject.value.id)
-    if (fresh.password && fresh.password !== passwordInput.value) {
+    const result = await verifyProjectPassword(pendingProject.value.id, passwordInput.value)
+    if (!result.valid) {
       passwordError.value = '密码错误，请重试'
       return
     }
     passwordDialogVisible.value = false
-    enterProject(fresh.id)
+    enterProject(pendingProject.value.id)
   } catch {
     ElMessage.error('验证失败，请重试')
   }
@@ -278,7 +283,7 @@ onMounted(loadProjects)
             <div class="card-tags">
               <span v-if="proj.llm_model" class="tag tag-llm">LLM: {{ proj.llm_model }}</span>
               <span v-if="proj.lvm_model" class="tag tag-lvm">LVM: {{ proj.lvm_model }}</span>
-              <span v-if="proj.password" class="tag tag-lock">🔒 需密码</span>
+              <span v-if="proj.has_password" class="tag tag-lock">🔒 需密码</span>
             </div>
           </div>
 
@@ -342,9 +347,6 @@ onMounted(loadProjects)
             </el-form-item>
           </div>
         </div>
-        <el-form-item label="API Key">
-          <el-input v-model="form.llm_key" placeholder="sk-..." show-password />
-        </el-form-item>
 
         <div class="form-divider"><span>视觉模型 (LVM)</span></div>
         <div class="form-row">
@@ -362,9 +364,6 @@ onMounted(loadProjects)
             </el-form-item>
           </div>
         </div>
-        <el-form-item label="API Key">
-          <el-input v-model="form.lvm_key" placeholder="sk-..." show-password />
-        </el-form-item>
       </el-form>
 
       <template #footer>

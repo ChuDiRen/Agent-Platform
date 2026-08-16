@@ -41,15 +41,16 @@ Agent-Platform/
 
 ### 后端 (`backend/`)
 
-- **技术栈**: FastAPI + SQLAlchemy 2.0 + Pydantic v2 + Alembic
-- **三层泛型**: `SQLAlchemy Base → CRUDBase[Model, Create, Update] → CRUDRouter`
+- **技术栈**: FastAPI + SQLAlchemy 2.0 + Pydantic v2 + SQLite
+- **三层泛型**: `SQLAlchemy Base → CRUDBase[Model, Create, Update] → 模块级单例`
 - **认证**: JWT（python-jose）+ bcrypt
-- **数据库**: SQLite（默认），配置写在代码中
+- **数据库**: SQLite（默认），启动时 `create_all` 自动建表，SQLite 启用外键级联
+- **异步任务**: Celery + Redis，AgentTask 状态机 + 事件/产物表
 
 核心模式：
 - 新增实体：定义 model → schema → crud（继承 CRUDBase）→ endpoint → 在 `main.py` 注册路由
 - 数据库会话：通过 FastAPI 依赖注入（`get_db` 生成器）
-- 配置管理：`pydantic-settings` 保留类型校验，代码默认值可被环境变量覆盖，但不读取 `.env` 和文件密钥
+- 配置管理：`pydantic-settings` 保留类型校验，代码默认值可被环境变量覆盖，但不读取 `.env` 和文件密钥；**生产环境必须通过环境变量配置 SECRET_KEY / AGENT_MODEL_API_KEY / ADMIN_PASSWORD**（DEBUG=False 时强制校验）
 
 ## 开发命令
 
@@ -82,11 +83,7 @@ python -m venv venv
 .\venv\Scripts\pytest -v ..\tests\api\test_users.py         # 单文件测试
 ```
 
-Alembic 迁移：
-```powershell
-.\venv\Scripts\alembic revision --autogenerate -m "描述"
-.\venv\Scripts\alembic upgrade head
-```
+数据库建表：启动时自动 `create_all`（无需迁移命令）；SQLite 已启用外键级联。
 
 ## 前后端联调
 

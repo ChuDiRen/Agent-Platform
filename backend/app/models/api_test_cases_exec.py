@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.sql import func
 
 from app.db.base_class import Base
@@ -8,7 +8,7 @@ class ApiTestCasesExec(Base):
     __tablename__ = "api_test_cases_exec"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, nullable=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
     name = Column(String(255), nullable=False)
     exec_type = Column(String(255), nullable=False, default="HTTP 请求")
     case_ids = Column(Text, nullable=False)

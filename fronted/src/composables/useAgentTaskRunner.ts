@@ -12,6 +12,8 @@ import {
 } from '@/api/agentTask'
 
 const TERMINAL_STATUS = new Set(['succeeded', 'failed', 'cancelled'])
+const POLL_INTERVAL_MS = 1500
+const MAX_CONSECUTIVE_FAILURES = 3
 
 export function useAgentTaskRunner<TOutput = unknown>(agentKey: string) {
   const task = ref<AgentTask<TOutput> | null>(null)
@@ -21,6 +23,7 @@ export function useAgentTaskRunner<TOutput = unknown>(agentKey: string) {
   const polling = ref(false)
   const finishedCallbacks: Array<(task: AgentTask<TOutput>) => void> = []
   let timer: number | undefined
+  let consecutiveFailures = 0
 
   const result = computed(() => task.value?.result_payload?.output as TOutput | undefined)
   const status = computed(() => task.value?.status)
@@ -61,13 +64,22 @@ export function useAgentTaskRunner<TOutput = unknown>(agentKey: string) {
 
   function startPolling() {
     stopPolling()
+    consecutiveFailures = 0
     polling.value = true
     timer = window.setInterval(() => {
-      refresh().catch(() => {
-        stopPolling()
-        loading.value = false
-      })
-    }, 1500)
+      refresh()
+        .then(() => {
+          consecutiveFailures = 0
+        })
+        .catch(() => {
+          // 瞬时网络抖动不立即停轮询；连续多次失败才放弃，避免任务"卡死"在非终止态
+          consecutiveFailures += 1
+          if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+            stopPolling()
+            loading.value = false
+          }
+        })
+    }, POLL_INTERVAL_MS)
   }
 
   async function run(inputPayload: Record<string, unknown>, projectId?: number | null) {

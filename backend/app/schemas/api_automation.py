@@ -33,6 +33,28 @@ class ApiAutomationCase(BaseModel):
     created_at: Optional[datetime] = None
 
 
+class ApiAutomationCaseCreate(BaseModel):
+    project_id: Optional[int] = None
+    module_id: Optional[int] = None
+    module_name: str = ""
+    exec_type: str = "HTTP 请求"
+    priority: int = Field(default=2, ge=1, le=5)
+    name: str = Field(min_length=1, max_length=255)
+    request: ApiRequestDetails = ApiRequestDetails(path="/", method="GET")
+    expected: str = ""
+
+
+class ApiAutomationCaseUpdate(BaseModel):
+    project_id: Optional[int] = None
+    module_id: Optional[int] = None
+    module_name: Optional[str] = None
+    exec_type: Optional[str] = None
+    priority: Optional[int] = Field(default=None, ge=1, le=5)
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    request: Optional[ApiRequestDetails] = None
+    expected: Optional[str] = None
+
+
 class ApiAutomationCaseQuery(BaseModel):
     project_id: Optional[int] = None
     name: Optional[str] = None

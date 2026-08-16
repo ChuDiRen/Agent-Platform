@@ -3,10 +3,8 @@ export interface ProjectCreate {
   description?: string
   password?: string
   llm_url?: string
-  llm_key?: string
   llm_model?: string
   lvm_url?: string
-  lvm_key?: string
   lvm_model?: string
   extend_json?: string
 }
@@ -16,10 +14,8 @@ export interface ProjectUpdate {
   description?: string
   password?: string
   llm_url?: string
-  llm_key?: string
   llm_model?: string
   lvm_url?: string
-  lvm_key?: string
   lvm_model?: string
   extend_json?: string
 }
@@ -28,12 +24,10 @@ export interface ProjectInfo {
   id: number
   name: string
   description?: string
-  password?: string
+  has_password: boolean
   llm_url?: string
-  llm_key?: string
   llm_model?: string
   lvm_url?: string
-  lvm_key?: string
   lvm_model?: string
   created_at?: string
   updated_at?: string

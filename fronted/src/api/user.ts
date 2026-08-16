@@ -1,4 +1,4 @@
-import { post, get, put } from './http'
+import { post } from './http'
 
 export interface LoginRequest {
   email: string
@@ -30,14 +30,10 @@ export function login(data: LoginRequest): Promise<LoginResponse> {
   return post<LoginResponse>('/api/v1/users/login', data)
 }
 
-export function getUserInfo(userId: number): Promise<UserInfo> {
-  return get<UserInfo>(`/api/v1/users/${userId}`)
-}
-
-export function getUsers(skip = 0, limit = 100): Promise<UserInfo[]> {
-  return get<UserInfo[]>('/api/v1/users/', { skip, limit })
-}
-
-export function updateUser(userId: number, data: UserUpdateRequest): Promise<UserInfo> {
-  return put<UserInfo>(`/api/v1/users/${userId}`, data)
+export function register(data: {
+  email: string
+  password: string
+  full_name?: string
+}): Promise<UserInfo> {
+  return post<UserInfo>('/api/v1/users/', data)
 }

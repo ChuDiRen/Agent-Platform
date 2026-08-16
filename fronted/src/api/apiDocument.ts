@@ -1,5 +1,4 @@
 import { del, get, post, put } from './http'
-import type { AgentTask } from './agentTask'
 import { getPageItems, type PaginatedData } from './pagination'
 
 export type ApiFindingSeverity = 'high' | 'medium' | 'low'
@@ -71,10 +70,4 @@ export function updateApiDocument(
 
 export function deleteApiDocument(documentId: number): Promise<ApiDocument> {
   return del<ApiDocument>(`/api/v1/api-documents/${documentId}`)
-}
-
-export function analyzeApiDocument(
-  data: ApiDocumentAnalysisRequest,
-): Promise<AgentTask<ApiDocumentAnalysisResponse>> {
-  return post<AgentTask<ApiDocumentAnalysisResponse>>('/api/v1/api-documents/analysis', data)
 }

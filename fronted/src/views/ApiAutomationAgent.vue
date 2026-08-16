@@ -46,8 +46,6 @@ const taskForm = reactive({
   name: '',
   execType: 'HTTP 请求',
   baseUrl: '',
-  username: '',
-  password: '',
   desc: '',
 })
 
@@ -89,6 +87,8 @@ async function loadCases() {
       module_id: filters.moduleId ? Number(filters.moduleId) : undefined,
       exec_type: filters.execType || undefined,
     })
+  } catch {
+    // 错误提示由 http.ts 拦截器统一处理
   } finally {
     caseLoading.value = false
   }
@@ -98,6 +98,8 @@ async function loadExecs() {
   execLoading.value = true
   try {
     execs.value = await getApiAutomationExecs(projectId)
+  } catch {
+    // 错误提示由 http.ts 拦截器统一处理
   } finally {
     execLoading.value = false
   }
@@ -139,16 +141,6 @@ async function submitTask() {
         desc: taskForm.desc,
         exec_param: {
           base_url: taskForm.baseUrl,
-          credential: {
-            username: taskForm.username,
-            password: taskForm.password,
-          },
-          case_params: Object.fromEntries(
-            selectedCases.value.map((item) => [
-              String(item.id),
-              { username: taskForm.username, password: taskForm.password },
-            ]),
-          ),
         },
       },
     })
@@ -347,22 +339,6 @@ onMounted(async () => {
         <el-form-item label="程序入口">
           <el-input v-model="taskForm.baseUrl" />
         </el-form-item>
-        <el-form-item label="登录凭据">
-          <div class="credential-row">
-            <el-input v-model="taskForm.username" placeholder="username" />
-            <el-input v-model="taskForm.password" placeholder="password" show-password />
-          </div>
-        </el-form-item>
-        <el-form-item
-          v-for="(item, index) in selectedCases"
-          :key="item.id"
-          :label="`${index + 1}.${item.module_name}`"
-        >
-          <el-input
-            :model-value="`username=${taskForm.username}; password=${taskForm.password}`"
-            readonly
-          />
-        </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="taskForm.desc" type="textarea" :rows="2" />
         </el-form-item>
@@ -454,12 +430,6 @@ onMounted(async () => {
 </template>
 
 <style lang="scss" scoped>
-.automation-page {
-  min-height: 100vh;
-  background: #f4f6f9;
-  color: #1f2937;
-}
-
 .topbar {
   height: 72px;
   padding: 0 32px;
@@ -516,23 +486,6 @@ onMounted(async () => {
   font-size: 16px;
 }
 
-.workspace {
-  padding: 24px 32px 40px;
-}
-
-.filter-panel,
-.case-panel {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-}
-
-.filter-panel {
-  padding: 20px 22px 2px;
-  margin-bottom: 18px;
-}
-
 .filter-panel :deep(.el-input),
 .filter-panel :deep(.el-select) {
   width: 220px;
@@ -568,10 +521,6 @@ onMounted(async () => {
 .case-summary {
   color: #64748b;
   font-size: 14px;
-}
-
-.case-panel :deep(.el-table) {
-  padding: 0 14px 18px;
 }
 
 .link-btn {

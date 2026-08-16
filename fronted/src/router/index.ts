@@ -24,12 +24,6 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '项目管理' },
   },
   {
-    path: '/projects/:id',
-    name: 'ProjectDetail',
-    component: () => import('@/views/ProjectDetail.vue'),
-    meta: { title: '项目详情' },
-  },
-  {
     path: '/agent-hub',
     name: 'AgentHub',
     component: () => import('@/views/AgentHub.vue'),
@@ -82,6 +76,12 @@ const routes: RouteRecordRaw[] = [
     name: 'PerformanceAnalysisAssistant',
     component: () => import('@/views/PerformanceAnalysisAssistant.vue'),
     meta: { title: 'AI性能数据分析助手' },
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    redirect: '/projects',
+    meta: { title: '页面不存在' },
   },
 ]
 

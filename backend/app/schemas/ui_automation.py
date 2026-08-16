@@ -25,6 +25,32 @@ class UiAutomationCase(BaseModel):
     created_at: Optional[datetime] = None
 
 
+class UiAutomationCaseCreate(BaseModel):
+    project_id: Optional[int] = None
+    module_id: Optional[int] = None
+    module_name: str = ""
+    exec_type: str = "WEB 网页"
+    priority: int = Field(default=2, ge=1, le=5)
+    name: str = Field(min_length=1, max_length=255)
+    page_url: str = ""
+    viewport: str = "desktop"
+    steps: list[UiActionStep] = Field(default_factory=list)
+    expected: str = ""
+
+
+class UiAutomationCaseUpdate(BaseModel):
+    project_id: Optional[int] = None
+    module_id: Optional[int] = None
+    module_name: Optional[str] = None
+    exec_type: Optional[str] = None
+    priority: Optional[int] = Field(default=None, ge=1, le=5)
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    page_url: Optional[str] = None
+    viewport: Optional[str] = None
+    steps: Optional[list[UiActionStep]] = None
+    expected: Optional[str] = None
+
+
 class UiExecutionResult(BaseModel):
     case_id: int
     case_name: str

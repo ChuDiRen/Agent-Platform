@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -29,8 +30,9 @@ def read_test_cases(
         db, project_id=project_id, module_id=module_id, skip=skip, limit=limit
     )
     data = [TestCaseOut.model_validate(i).model_dump() for i in items]
+    total = test_case_crud.count_by_scope(db, project_id=project_id, module_id=module_id)
     page = skip // limit + 1 if limit > 0 else 1
-    return paginated(items=data, total=len(data), page=page, page_size=limit)
+    return paginated(items=data, total=total, page=page, page_size=limit)
 
 
 @router.post("/")
@@ -52,7 +54,16 @@ def generate_cases(payload: TestCaseGenerateRequest, db: Session = Depends(get_d
 
 @router.post("/apply")
 def apply_cases(payload: TestCaseApplyRequest, db: Session = Depends(get_db)):
-    items = [test_case_crud.create(db, obj_in=item) for item in payload.cases]
+    """批量入库生成的用例（单事务，失败整体回滚）。"""
+    items = []
+    for item in payload.cases:
+        obj_in_data = jsonable_encoder(item)
+        db_obj = test_case_crud.model(**obj_in_data)
+        db.add(db_obj)
+        items.append(db_obj)
+    db.commit()
+    for db_obj in items:
+        db.refresh(db_obj)
     return success(data=[TestCaseOut.model_validate(i).model_dump() for i in items])
 
 

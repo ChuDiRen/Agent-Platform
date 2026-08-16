@@ -45,8 +45,6 @@ const taskForm = reactive({
   name: '',
   execType: 'WEB 网页',
   baseUrl: '',
-  username: '',
-  password: '',
   browser: 'Chromium',
   desc: '',
 })
@@ -77,6 +75,8 @@ async function loadCases() {
       module_id: filters.moduleId ? Number(filters.moduleId) : undefined,
       exec_type: filters.execType || undefined,
     })
+  } catch {
+    // 错误提示由 http.ts 拦截器统一处理
   } finally {
     caseLoading.value = false
   }
@@ -86,6 +86,8 @@ async function loadExecs() {
   execLoading.value = true
   try {
     execs.value = await getUiAutomationExecs(projectId)
+  } catch {
+    // 错误提示由 http.ts 拦截器统一处理
   } finally {
     execLoading.value = false
   }
@@ -128,7 +130,6 @@ async function submitTask() {
         exec_param: {
           base_url: taskForm.baseUrl,
           browser: taskForm.browser,
-          credential: { username: taskForm.username, password: taskForm.password },
         },
       },
     })
@@ -305,12 +306,6 @@ onMounted(async () => {
             <el-option label="WebKit" value="WebKit" />
           </el-select>
         </el-form-item>
-        <el-form-item label="登录凭据">
-          <div class="credential-row">
-            <el-input v-model="taskForm.username" placeholder="username" />
-            <el-input v-model="taskForm.password" placeholder="password" show-password />
-          </div>
-        </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="taskForm.desc" type="textarea" :rows="2" />
         </el-form-item>
@@ -398,12 +393,6 @@ onMounted(async () => {
 </template>
 
 <style lang="scss" scoped>
-.ui-page {
-  min-height: 100vh;
-  background: #f4f6f9;
-  color: #1f2937;
-}
-
 .topbar {
   height: 72px;
   padding: 0 32px;
@@ -461,23 +450,6 @@ onMounted(async () => {
   font-size: 16px;
 }
 
-.workspace {
-  padding: 24px 32px 40px;
-}
-
-.filter-panel,
-.case-panel {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-}
-
-.filter-panel {
-  padding: 20px 22px 2px;
-  margin-bottom: 18px;
-}
-
 .filter-panel :deep(.el-input),
 .filter-panel :deep(.el-select) {
   width: 220px;
@@ -513,10 +485,6 @@ onMounted(async () => {
 .case-summary {
   color: #64748b;
   font-size: 14px;
-}
-
-.case-panel :deep(.el-table) {
-  padding: 0 14px 18px;
 }
 
 .link-btn {

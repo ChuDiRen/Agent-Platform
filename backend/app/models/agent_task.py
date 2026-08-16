@@ -23,8 +23,8 @@ class AgentTask(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     agent_key = Column(String(100), nullable=False, index=True)
-    project_id = Column(Integer, nullable=True, index=True)
-    user_id = Column(Integer, nullable=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     status = Column(String(20), nullable=False, default=AgentTaskStatus.CREATED.value, index=True)
     priority = Column(Integer, nullable=False, default=0)
     input_payload = Column(JSON, nullable=False, default=dict)

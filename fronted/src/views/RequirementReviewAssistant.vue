@@ -137,6 +137,11 @@ async function saveCurrent() {
 }
 
 async function removeDocument(document: RequirementDocument) {
+  await ElMessageBox.confirm(
+    `确认删除「${document.title || document.name}」？其子文档将一并删除。`,
+    '删除确认',
+    { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
+  )
   await deleteDocument(document.id)
   documents.value = documents.value.filter(
     (item) => item.id !== document.id && item.parent_id !== document.id,
@@ -156,12 +161,15 @@ async function runReview() {
   reviewVisible.value = true
   reviewing.value = true
   try {
-    await taskRunner.run({
-      document_id: selectedDocument.value.id,
-      title: selectedDocument.value.title,
-      content: editorContent.value,
-      extra_prompt: extraPrompt.value,
-    })
+    await taskRunner.run(
+      {
+        document_id: selectedDocument.value.id,
+        title: selectedDocument.value.title,
+        content: editorContent.value,
+        extra_prompt: extraPrompt.value,
+      },
+      projectId,
+    )
     const response = taskRunner.result.value
     if (response?.findings) {
       findings.value = response.findings
@@ -300,12 +308,6 @@ onMounted(async () => {
 </template>
 
 <style scoped lang="scss">
-.review-page {
-  min-height: 100vh;
-  background: #f2f4f7;
-  color: #17212b;
-}
-
 .topbar {
   height: 80px;
   padding: 0 100px;
@@ -352,33 +354,6 @@ onMounted(async () => {
   }
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: 325px 1fr;
-  gap: 20px;
-  max-width: 1720px;
-  margin: 20px auto 0;
-  padding: 0 20px;
-}
-
-.sidebar,
-.workspace {
-  background: #fff;
-  border: 1px solid #dce3eb;
-  border-radius: 6px;
-  box-shadow: $shadow-sm;
-}
-
-.sidebar {
-  min-height: 770px;
-}
-
-.side-actions {
-  gap: 12px;
-  padding: 22px 16px 28px;
-  border-bottom: 1px solid #e8edf3;
-}
-
 button {
   font-family: inherit;
 }
@@ -413,35 +388,9 @@ button {
   min-width: 190px;
 }
 
-.tree {
-  padding: 16px;
-}
-
 .tree-row {
-  display: grid;
-  grid-template-columns: 18px 18px 1fr 34px 34px 34px;
-  align-items: center;
-  gap: 6px;
-  min-height: 26px;
-  padding: 2px 8px;
-  font-size: 14px;
-  cursor: pointer;
-
-  &.child {
-    padding-left: 34px;
-    grid-template-columns: 18px 1fr 34px 34px 34px;
-  }
-
   &.active {
     background: #e8f2ff;
-  }
-
-  button {
-    border: 0;
-    background: transparent;
-    color: #2f91f4;
-    cursor: pointer;
-    font-size: 12px;
   }
 
   .danger {
@@ -453,50 +402,11 @@ button {
   @include ellipsis;
 }
 
-.workspace {
-  min-height: 770px;
-  padding: 18px 20px;
-}
-
 .workspace-head {
-  justify-content: space-between;
-  height: 62px;
-  padding: 0 20px;
-  background: #eaf4ff;
-  color: #1683ff;
-  font-weight: 700;
-
   div {
     display: flex;
     gap: 12px;
   }
-}
-
-.editor-shell {
-  margin-top: 20px;
-  border: 1px solid #cfd8e3;
-}
-
-.toolbar {
-  gap: 12px;
-  height: 34px;
-  padding: 0 310px;
-  background: #f4f7fa;
-  border-bottom: 1px solid #cfd8e3;
-  color: #5f6b78;
-}
-
-.editor {
-  width: 100%;
-  min-height: 520px;
-  padding: 34px 16%;
-  border: 0;
-  resize: vertical;
-  outline: none;
-  color: #111827;
-  font-size: 16px;
-  line-height: 1.9;
-  white-space: pre-wrap;
 }
 
 footer {

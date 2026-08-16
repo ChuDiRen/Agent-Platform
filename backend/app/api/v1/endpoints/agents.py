@@ -10,7 +10,13 @@ router = APIRouter()
 
 @router.get("/")
 def read_agents(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    items = agent_crud.get_multi(db, skip=skip, limit=limit)
+    items = (
+        db.query(agent_crud.model)
+        .order_by(agent_crud.model.sort_order.asc(), agent_crud.model.id.asc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     return success(data=[AgentOut.model_validate(a).model_dump() for a in items])
 
 

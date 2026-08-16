@@ -13,7 +13,8 @@ def test_model_provider_config_has_code_defaults(monkeypatch):
 
     assert settings.AGENT_MODEL_SPEC == "openai:mimo-v2.5-pro"
     assert settings.AGENT_MODEL_BASE_URL == "https://token-plan-sgp.xiaomimimo.com/v1"
-    assert settings.AGENT_MODEL_API_KEY.startswith("tp-")
+    # API Key 绝不在代码中提供默认值，必须通过环境变量配置
+    assert settings.AGENT_MODEL_API_KEY == ""
 
 
 def test_core_runtime_config_has_code_defaults(monkeypatch):
@@ -32,9 +33,11 @@ def test_core_runtime_config_has_code_defaults(monkeypatch):
 
     assert settings.PROJECT_NAME == "My FastAPI App"
     assert settings.DATABASE_URL == "sqlite:///./test.db"
-    assert settings.SECRET_KEY == "change-me-in-production-please"
-    assert settings.CELERY_BROKER_URL == "redis://:admin123456@192.168.111.128:6379/0"
-    assert settings.CELERY_RESULT_BACKEND == "redis://:admin123456@192.168.111.128:6379/1"
+    # SECRET_KEY 必须是非弱默认值（生产环境校验强制覆盖）
+    assert settings.SECRET_KEY == "dev-only-insecure-secret-key"
+    # broker/backend 默认仅本机、无任何明文凭据
+    assert settings.CELERY_BROKER_URL == "redis://localhost:6379/0"
+    assert settings.CELERY_RESULT_BACKEND == "redis://localhost:6379/1"
     assert settings.CELERY_BROKER_CONNECTION_TIMEOUT == 5.0
     assert settings.DEBUG is True
 
@@ -75,6 +78,7 @@ def test_production_accepts_safe_overrides(monkeypatch):
     monkeypatch.setenv("SECRET_KEY", "safe-production-secret")
     monkeypatch.setenv("BACKEND_CORS_ORIGINS", "https://agent-platform.example.com")
     monkeypatch.setenv("AGENT_MODEL_API_KEY", "prod-model-key")
+    monkeypatch.setenv("ADMIN_PASSWORD", "prod-admin-password")
 
     settings = Settings()
 
@@ -82,3 +86,14 @@ def test_production_accepts_safe_overrides(monkeypatch):
     assert settings.SECRET_KEY == "safe-production-secret"
     assert settings.cors_origins == ["https://agent-platform.example.com"]
     assert settings.AGENT_MODEL_API_KEY == "prod-model-key"
+
+
+def test_production_rejects_default_admin_password(monkeypatch):
+    monkeypatch.setenv("DEBUG", "false")
+    monkeypatch.setenv("SECRET_KEY", "safe-production-secret")
+    monkeypatch.setenv("BACKEND_CORS_ORIGINS", "https://agent-platform.example.com")
+    monkeypatch.setenv("AGENT_MODEL_API_KEY", "prod-model-key")
+    monkeypatch.delenv("ADMIN_PASSWORD", raising=False)
+
+    with pytest.raises(ValidationError, match="ADMIN_PASSWORD"):
+        Settings()
